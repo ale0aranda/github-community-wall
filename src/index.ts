@@ -41,9 +41,11 @@ if (!githubToken) {
 const sizeToUse = Number(imageSize) || IMAGE_SIZE;
 const rowsToUse = Number(rowsOfImages) || ROWS_OF_IMAGES;
 
-export const headers = {
+const headers = {
+  Accept: 'application/vnd.github+json',
+  Authorization: `Bearer ${githubToken}`,
   'Content-Type': 'application/json',
-  Authorization: `Bearer ${githubToken}`
+  'User-Agent': 'github-followers-graph'
 };
 
 const response = await fetch('https://api.github.com/user', {
@@ -55,7 +57,8 @@ if (!response.ok) {
 }
 
 const user = (await response.json()) as GitHubUser;
-const graph = await generateGraph(user.login, sizeToUse, rowsToUse);
+
+const graph = await generateGraph(user.login, sizeToUse, rowsToUse, headers);
 
 const outputDirectory = dirname(OUT_FILE);
 

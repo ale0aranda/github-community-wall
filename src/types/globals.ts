@@ -1,12 +1,21 @@
+export interface GitHubFollower {
+  avatarUrl: string;
+}
+
+export interface FollowersPageInfo {
+  endCursor: string | null;
+  hasNextPage: boolean;
+}
+
 export interface FollowersData {
   user: {
     followers: {
-      pageInfo: {
-        hasNextPage: boolean;
-      };
-      nodes: {
-        avatarUrl: string;
-      }[];
+      pageInfo: FollowersPageInfo;
+      nodes: GitHubFollower[];
     };
   };
+}
+
+export interface GitHubGraphQLResponse {
+  data: FollowersData;
 }
