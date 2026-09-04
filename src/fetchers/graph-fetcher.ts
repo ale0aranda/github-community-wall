@@ -1,22 +1,22 @@
 import { createCanvas } from '@napi-rs/canvas';
 
-import { headers } from '../index.js';
 import { fetchImages } from './images-fetcher.js';
 
-import type { FollowersData } from '../types/globals.js';
+import type { FollowersData, GitHubGraphQLResponse } from '../types/globals.js';
 
-interface GitHubGraphQLResponse {
-  data: FollowersData;
-}
+export type GitHubHeaders = Record<string, string>;
 
 export const fetchGraphQL = async (
-  username: string
+  username: string,
+  headers: GitHubHeaders,
+  cursor: string | null = null
 ): Promise<FollowersData> => {
   const query = `
     {
       user(login: ${JSON.stringify(username)}) {
-        followers(first: 100, after: null) {
+        followers(first: 100, after: ${JSON.stringify(cursor)}) {
           pageInfo {
+            endCursor
             hasNextPage
           }
           nodes {
@@ -44,37 +44,54 @@ export const fetchGraphQL = async (
 
 export const fetchFollowersPfps = async (
   username: string,
-  avatarsURLs: string[] = [],
+  headers: GitHubHeaders,
   limit = 100
 ): Promise<string[]> => {
-  const followersData = await fetchGraphQL(username);
-  const { pageInfo, nodes } = followersData.user.followers;
-
-  const updatedAvatarUrls = avatarsURLs.concat(
-    nodes.map((node) => node.avatarUrl)
-  );
-
-  if (updatedAvatarUrls.length >= limit) {
-    return updatedAvatarUrls.slice(0, limit);
+  if (limit <= 0) {
+    return [];
   }
 
-  if (!pageInfo.hasNextPage) {
-    return updatedAvatarUrls;
+  const avatarUrls: string[] = [];
+  let cursor: string | null = null;
+  let hasNextPage = true;
+
+  while (hasNextPage && avatarUrls.length < limit) {
+    const followersData = await fetchGraphQL(username, headers, cursor);
+    const { nodes, pageInfo } = followersData.user.followers;
+
+    avatarUrls.push(...nodes.map((node) => node.avatarUrl));
+
+    cursor = pageInfo.endCursor;
+    hasNextPage = pageInfo.hasNextPage;
+
+    if (hasNextPage && !cursor) {
+      throw new Error('GitHub returned an invalid pagination cursor');
+    }
   }
 
-  return fetchFollowersPfps(username, updatedAvatarUrls, limit);
+  return avatarUrls.slice(0, limit);
 };
 
 export const generateGraph = async (
   username: string,
   imageSize: number,
-  rowsOfImages: number
+  rowsOfImages: number,
+  headers: GitHubHeaders
 ): Promise<Buffer> => {
-  const avatarUrls = await fetchFollowersPfps(username);
+  if (imageSize <= 0) {
+    throw new RangeError('Image size must be greater than zero');
+  }
+
+  if (rowsOfImages <= 0) {
+    throw new RangeError('Rows of images must be greater than zero');
+  }
+
+  const avatarUrls = await fetchFollowersPfps(username, headers);
   const images = await fetchImages(avatarUrls, imageSize);
 
   const width = imageSize * rowsOfImages;
-  const height = Math.ceil(images.length / rowsOfImages) * imageSize;
+  const rowCount = Math.max(1, Math.ceil(images.length / rowsOfImages));
+  const height = rowCount * imageSize;
 
   const canvas = createCanvas(width, height);
   const context = canvas.getContext('2d');
