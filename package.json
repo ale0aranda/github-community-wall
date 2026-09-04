@@ -5,6 +5,15 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "github-community-wall": "./dist/cli.js"
+  },
   "files": ["dist"],
   "scripts": {
     "build": "tsup",

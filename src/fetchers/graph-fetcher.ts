@@ -76,7 +76,8 @@ export const generateGraph = async (
   username: string,
   imageSize: number,
   rowsOfImages: number,
-  headers: GitHubHeaders
+  headers: GitHubHeaders,
+  limit = 100
 ): Promise<Buffer> => {
   if (imageSize <= 0) {
     throw new RangeError('Image size must be greater than zero');
@@ -86,13 +87,14 @@ export const generateGraph = async (
     throw new RangeError('Rows of images must be greater than zero');
   }
 
-  const avatarUrls = await fetchFollowersPfps(username, headers);
+  const avatarUrls = await fetchFollowersPfps(username, headers, limit);
+
   const images = await fetchImages(avatarUrls, imageSize);
 
   const width = imageSize * rowsOfImages;
   const rowCount = Math.max(1, Math.ceil(images.length / rowsOfImages));
-  const height = rowCount * imageSize;
 
+  const height = rowCount * imageSize;
   const canvas = createCanvas(width, height);
   const context = canvas.getContext('2d');
 
