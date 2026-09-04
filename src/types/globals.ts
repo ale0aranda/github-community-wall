@@ -2,11 +2,11 @@ export interface FollowersData {
   user: {
     followers: {
       pageInfo: {
-        hasNextPage: boolean
-      }
+        hasNextPage: boolean;
+      };
       nodes: {
-        avatarUrl: string
-      }[]
-    }
-  }
+        avatarUrl: string;
+      }[];
+    };
+  };
 }
