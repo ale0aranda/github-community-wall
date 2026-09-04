@@ -1,7 +1,7 @@
 {
-  "name": "github-followers-graph",
+  "name": "github-community-wall",
   "version": "1.0.0",
-  "description": "Generate an image graph containing GitHub follower avatars",
+  "description": "Generate dynamic GitHub community walls for followers, contributors, and sponsors",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -18,9 +18,29 @@
     "prepare": "husky",
     "prepack": "pnpm check && pnpm test && pnpm build"
   },
-  "keywords": ["github", "followers", "graph"],
-  "author": "alejandro.arancibia.aranda@gmail.com",
+  "keywords": [
+    "github",
+    "community",
+    "followers",
+    "contributors",
+    "sponsors",
+    "avatars",
+    "readme"
+  ],
+  "author": {
+    "name": "Alejandro Arancibia",
+    "email": "alejandro.arancibia.aranda@gmail.com",
+    "url": "https://github.com/ale0aranda"
+  },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ale0aranda/github-community-wall.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ale0aranda/github-community-wall/issues"
+  },
+  "homepage": "https://github.com/ale0aranda/github-community-wall#readme",
   "engines": {
     "node": ">=22.13.0"
   },
