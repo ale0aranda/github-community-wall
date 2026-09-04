@@ -1,3 +1,11 @@
 {
-  "extends": ["@ryuux/config/biome"]
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": ["@ale0aranda/rules/biome/base", "@ale0aranda/rules/biome/node"],
+  "linter": {
+    "rules": {
+      "complexity": {
+        "useLiteralKeys": "off"
+      }
+    }
+  }
 }

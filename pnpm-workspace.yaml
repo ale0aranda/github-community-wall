@@ -1,0 +1,6 @@
+allowBuilds:
+  "@biomejs/biome": false
+  esbuild: true
+
+minimumReleaseAgeExclude:
+  - "@ale0aranda/rules"

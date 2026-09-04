@@ -1,4 +1,4 @@
-import { type Options, defineConfig } from 'tsup'
+import { defineConfig, type Options } from 'tsup';
 
 export default defineConfig({
   entry: ['src/index.ts'],
@@ -13,4 +13,4 @@ export default defineConfig({
   dts: true,
   splitting: false,
   minify: false
-} as Options)
+} as Options);
