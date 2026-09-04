@@ -21,12 +21,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Set up pnpm and Node.js
-        uses: pnpm/setup@v1
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
         with:
-          version: 11.5.1
-          runtime: node@22
-          install: false
+          node-version: 22
+
+      - name: Install pnpm
+        run: npm install --global pnpm@11.5.1
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -46,13 +47,14 @@ jobs:
 
       - name: Commit updated wall
         run: |
-          if git diff --quiet -- assets/followers.png; then
+          git add assets/followers.png
+
+          if git diff --cached --quiet; then
             echo "Community wall is already up to date."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/followers.png
           git commit -m "chore: update community wall"
           git push
