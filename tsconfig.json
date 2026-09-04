@@ -1,9 +1,8 @@
 {
+  "extends": "@ale0aranda/rules/typescript/node",
   "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "esModuleInterop": true
+    "rootDir": "./src"
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "graphs"]
 }
