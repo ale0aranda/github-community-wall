@@ -1,8 +1,9 @@
 {
   "extends": "@ale0aranda/rules/typescript/node",
   "compilerOptions": {
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "types": ["node"]
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "graphs"]
+  "exclude": ["node_modules", "dist", "coverage", "assets"]
 }
