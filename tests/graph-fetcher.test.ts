@@ -8,15 +8,10 @@ import {
 } from '../src/fetchers/graph-fetcher.js';
 import { fetchImages } from '../src/fetchers/images-fetcher.js';
 
-const canvasMocks = vi.hoisted(() => {
-  const drawImage = vi.fn();
-  const toBuffer = vi.fn().mockReturnValue(Buffer.from('graph'));
-
-  return {
-    drawImage,
-    toBuffer
-  };
-});
+const canvasMocks = vi.hoisted(() => ({
+  drawImage: vi.fn(),
+  toBuffer: vi.fn().mockReturnValue(Buffer.from('graph'))
+}));
 
 vi.mock('@napi-rs/canvas', () => ({
   createCanvas: vi.fn(() => ({
@@ -41,7 +36,9 @@ const createFollowersResponse = (
   endCursor: string | null = null
 ) => ({
   ok: true,
+  status: 200,
   statusText: 'OK',
+  headers: new Headers(),
   json: vi.fn().mockResolvedValue({
     data: {
       user: {
@@ -64,7 +61,7 @@ describe('fetchGraphQL', () => {
     vi.unstubAllGlobals();
   });
 
-  it('requests followers from the GitHub GraphQL API', async () => {
+  it('requests followers from GitHub', async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValue(createFollowersResponse(['avatar-1']));
@@ -84,6 +81,7 @@ describe('fetchGraphQL', () => {
     const [url, options] = fetchMock.mock.calls[0] ?? [];
 
     expect(url).toBe('https://api.github.com/graphql');
+
     expect(options).toMatchObject({
       headers,
       method: 'POST'
@@ -92,17 +90,19 @@ describe('fetchGraphQL', () => {
     expect(options?.body).toContain('ale0aranda');
   });
 
-  it('throws when GitHub returns an HTTP error', async () => {
+  it('throws a typed authentication error', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        ok: false,
-        statusText: 'Unauthorized'
-      })
+      vi.fn().mockResolvedValue(
+        new Response(null, {
+          status: 401,
+          statusText: 'Unauthorized'
+        })
+      )
     );
 
     await expect(fetchGraphQL('ale0aranda', headers)).rejects.toThrow(
-      'Failed to fetch data from GitHub: Unauthorized'
+      'GitHub authentication failed while fetching followers for @ale0aranda'
     );
   });
 });
@@ -112,7 +112,7 @@ describe('fetchFollowersPfps', () => {
     vi.unstubAllGlobals();
   });
 
-  it('returns avatar URLs', async () => {
+  it('returns follower avatar URLs', async () => {
     vi.stubGlobal(
       'fetch',
       vi
@@ -125,15 +125,13 @@ describe('fetchFollowersPfps', () => {
     expect(result).toEqual(['avatar-1', 'avatar-2']);
   });
 
-  it('loads all pages until reaching the limit', async () => {
+  it('loads pages until reaching the limit', async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
         createFollowersResponse(['avatar-1', 'avatar-2'], true, 'cursor-1')
       )
-      .mockResolvedValueOnce(
-        createFollowersResponse(['avatar-3', 'avatar-4'], false)
-      );
+      .mockResolvedValueOnce(createFollowersResponse(['avatar-3', 'avatar-4']));
 
     vi.stubGlobal('fetch', fetchMock);
 
@@ -148,7 +146,7 @@ describe('fetchFollowersPfps', () => {
     expect(secondRequest?.body).toContain('cursor-1');
   });
 
-  it('returns an empty array when the limit is zero', async () => {
+  it('returns an empty array for a zero limit', async () => {
     const fetchMock = vi.fn();
 
     vi.stubGlobal('fetch', fetchMock);
@@ -159,7 +157,7 @@ describe('fetchFollowersPfps', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('rejects invalid pagination data', async () => {
+  it('rejects an invalid pagination cursor', async () => {
     vi.stubGlobal(
       'fetch',
       vi
@@ -236,7 +234,7 @@ describe('generateGraph', () => {
     );
   });
 
-  it('rejects an invalid row count', async () => {
+  it('rejects an invalid column count', async () => {
     await expect(generateGraph('ale0aranda', 64, 0, headers)).rejects.toThrow(
       'Columns must be greater than zero'
     );

@@ -1,3 +1,4 @@
+import { assertGitHubResponse } from '../errors.js';
 import {
   renderAvatarGrid,
   validateAvatarGridOptions
@@ -48,6 +49,7 @@ export const fetchContributors = async (
   }
 
   const { owner, name } = parseRepository(repository);
+
   const contributors: GitHubContributor[] = [];
   let page = 1;
   let shouldContinue = true;
@@ -64,11 +66,7 @@ export const fetchContributors = async (
       headers
     });
 
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch GitHub contributors: ${response.statusText}`
-      );
-    }
+    assertGitHubResponse(response, `fetching contributors for ${repository}`);
 
     const pageContributors =
       (await response.json()) as GitHubContributorResponse[];

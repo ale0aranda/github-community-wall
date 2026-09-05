@@ -21,6 +21,7 @@ const createResponse = (
   link: string | null = null
 ) => ({
   ok: true,
+  status: 200,
   statusText: 'OK',
   headers: {
     get: vi.fn().mockReturnValue(link)
@@ -30,14 +31,14 @@ const createResponse = (
 
 describe('parseRepository', () => {
   it('parses an owner and repository name', () => {
-    expect(parseRepository('ale0aranda/pyschool')).toEqual({
+    expect(parseRepository('ale0aranda/github-community-wall')).toEqual({
       owner: 'ale0aranda',
-      name: 'pyschool'
+      name: 'github-community-wall'
     });
   });
 
   it('rejects an invalid repository', () => {
-    expect(() => parseRepository('pyschool')).toThrow(
+    expect(() => parseRepository('invalid')).toThrow(
       'Repository must use the format owner/name'
     );
   });
@@ -64,7 +65,7 @@ describe('fetchContributors', () => {
     );
 
     const contributors = await fetchContributors(
-      'ale0aranda/pyschool',
+      'ale0aranda/github-community-wall',
       headers
     );
 
@@ -94,7 +95,7 @@ describe('fetchContributors', () => {
     );
 
     const contributors = await fetchContributors(
-      'ale0aranda/pyschool',
+      'ale0aranda/github-community-wall',
       headers
     );
 
@@ -117,7 +118,7 @@ describe('fetchContributors', () => {
     );
 
     const contributors = await fetchContributors(
-      'ale0aranda/pyschool',
+      'ale0aranda/github-community-wall',
       headers,
       100,
       true
@@ -126,18 +127,37 @@ describe('fetchContributors', () => {
     expect(contributors).toHaveLength(1);
   });
 
+  it('returns an empty array for a zero limit', async () => {
+    const fetchMock = vi.fn();
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    const contributors = await fetchContributors(
+      'ale0aranda/github-community-wall',
+      headers,
+      0
+    );
+
+    expect(contributors).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('throws when GitHub returns an error', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        ok: false,
-        statusText: 'Not Found'
-      })
+      vi.fn().mockResolvedValue(
+        new Response(null, {
+          status: 404,
+          statusText: 'Not Found'
+        })
+      )
     );
 
     await expect(
       fetchContributors('ale0aranda/missing', headers)
-    ).rejects.toThrow('Failed to fetch GitHub contributors: Not Found');
+    ).rejects.toThrow(
+      'GitHub resource not found while fetching contributors for ale0aranda/missing'
+    );
   });
 });
 
@@ -162,7 +182,7 @@ describe('generateContributorsWall', () => {
     );
 
     const result = await generateContributorsWall(
-      'ale0aranda/pyschool',
+      'ale0aranda/github-community-wall',
       64,
       10,
       headers

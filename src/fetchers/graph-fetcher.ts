@@ -1,3 +1,4 @@
+import { assertGitHubResponse } from '../errors.js';
 import {
   renderAvatarGrid,
   validateAvatarGridOptions
@@ -34,9 +35,7 @@ export const fetchGraphQL = async (
     body: JSON.stringify({ query })
   });
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch data from GitHub: ${response.statusText}`);
-  }
+  assertGitHubResponse(response, `fetching followers for @${username}`);
 
   const json = (await response.json()) as GitHubGraphQLResponse;
 
