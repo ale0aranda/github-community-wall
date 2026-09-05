@@ -6,7 +6,11 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      include: ['src/fetchers/**/*.ts'],
+      include: [
+        'src/fetchers/**/*.ts',
+        'src/renderer/**/*.ts',
+        'src/github-client.ts'
+      ],
       thresholds: {
         branches: 80,
         functions: 80,

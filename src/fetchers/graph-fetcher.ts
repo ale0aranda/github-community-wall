@@ -1,6 +1,7 @@
-import { createCanvas } from '@napi-rs/canvas';
-
-import { fetchImages } from './images-fetcher.js';
+import {
+  renderAvatarGrid,
+  validateAvatarGridOptions
+} from '../renderer/avatar-grid-renderer.js';
 
 import type { FollowersData, GitHubGraphQLResponse } from '../types/globals.js';
 
@@ -57,6 +58,7 @@ export const fetchFollowersPfps = async (
 
   while (hasNextPage && avatarUrls.length < limit) {
     const followersData = await fetchGraphQL(username, headers, cursor);
+
     const { nodes, pageInfo } = followersData.user.followers;
 
     avatarUrls.push(...nodes.map((node) => node.avatarUrl));
@@ -75,41 +77,18 @@ export const fetchFollowersPfps = async (
 export const generateGraph = async (
   username: string,
   imageSize: number,
-  rowsOfImages: number,
+  columns: number,
   headers: GitHubHeaders,
   limit = 100
 ): Promise<Buffer> => {
-  if (imageSize <= 0) {
-    throw new RangeError('Image size must be greater than zero');
-  }
+  const renderOptions = {
+    columns,
+    imageSize
+  };
 
-  if (rowsOfImages <= 0) {
-    throw new RangeError('Rows of images must be greater than zero');
-  }
+  validateAvatarGridOptions(renderOptions);
 
   const avatarUrls = await fetchFollowersPfps(username, headers, limit);
 
-  const images = await fetchImages(avatarUrls, imageSize);
-
-  const width = imageSize * rowsOfImages;
-  const rowCount = Math.max(1, Math.ceil(images.length / rowsOfImages));
-
-  const height = rowCount * imageSize;
-  const canvas = createCanvas(width, height);
-  const context = canvas.getContext('2d');
-
-  images.forEach((image, index) => {
-    const column = index % rowsOfImages;
-    const row = Math.floor(index / rowsOfImages);
-
-    context.drawImage(
-      image,
-      column * imageSize,
-      row * imageSize,
-      imageSize,
-      imageSize
-    );
-  });
-
-  return canvas.toBuffer('image/png');
+  return renderAvatarGrid(avatarUrls, renderOptions);
 };

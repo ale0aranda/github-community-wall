@@ -238,7 +238,7 @@ describe('generateGraph', () => {
 
   it('rejects an invalid row count', async () => {
     await expect(generateGraph('ale0aranda', 64, 0, headers)).rejects.toThrow(
-      'Rows of images must be greater than zero'
+      'Columns must be greater than zero'
     );
   });
 });

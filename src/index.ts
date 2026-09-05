@@ -15,8 +15,10 @@ export {
   createGitHubHeaders,
   fetchAuthenticatedUsername
 } from './github-client.js';
+export { renderAvatarGrid } from './renderer/avatar-grid-renderer.js';
 
 export type { GitHubHeaders } from './fetchers/graph-fetcher.js';
+export type { AvatarGridOptions } from './renderer/avatar-grid-renderer.js';
 export type {
   FollowersData,
   FollowersPageInfo,
