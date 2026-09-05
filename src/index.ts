@@ -25,6 +25,11 @@ export {
 } from './fetchers/graph-fetcher.js';
 export { fetchImages } from './fetchers/images-fetcher.js';
 export {
+  fetchSponsors,
+  fetchSponsorsGraphQL,
+  generateSponsorsWall
+} from './fetchers/sponsors-fetcher.js';
+export {
   createGitHubHeaders,
   fetchAuthenticatedUsername
 } from './github-client.js';

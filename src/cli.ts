@@ -18,6 +18,7 @@ import {
 } from './const.js';
 import { generateContributorsWall } from './fetchers/contributors-fetcher.js';
 import { generateGraph } from './fetchers/graph-fetcher.js';
+import { generateSponsorsWall } from './fetchers/sponsors-fetcher.js';
 import {
   createGitHubHeaders,
   fetchAuthenticatedUsername
@@ -55,6 +56,13 @@ export interface CliDependencies {
     headers: GitHubHeaders,
     limit: number
   ) => Promise<Buffer>;
+  generateSponsorsGraph: (
+    username: string,
+    imageSize: number,
+    columns: number,
+    headers: GitHubHeaders,
+    limit: number
+  ) => Promise<Buffer>;
   makeDirectory: (path: string) => Promise<void>;
   saveFile: (path: string, content: Buffer) => Promise<void>;
   writeOutput: (message: string) => void;
@@ -65,6 +73,7 @@ const defaultDependencies: CliDependencies = {
   fetchUsername: fetchAuthenticatedUsername,
   generateContributorsGraph: generateContributorsWall,
   generateFollowersGraph: generateGraph,
+  generateSponsorsGraph: generateSponsorsWall,
   makeDirectory: async (path) => {
     await mkdirFileSystem(path, {
       recursive: true
@@ -125,6 +134,12 @@ const requireToken = (token: string | undefined): string => {
   return token;
 };
 
+const resolveUsername = async (
+  username: string | undefined,
+  headers: GitHubHeaders,
+  dependencies: CliDependencies
+): Promise<string> => username ?? (await dependencies.fetchUsername(headers));
+
 const saveGraph = async (
   graph: Buffer,
   output: string,
@@ -133,9 +148,20 @@ const saveGraph = async (
   const outputPath = resolve(output);
 
   await dependencies.makeDirectory(dirname(outputPath));
+
   await dependencies.saveFile(outputPath, graph);
 
   return outputPath;
+};
+
+const writeResult = (
+  subject: string,
+  outputPath: string,
+  dependencies: CliDependencies
+): void => {
+  dependencies.writeOutput(`Community wall generated for ${subject}\n`);
+
+  dependencies.writeOutput(`Saved to: ${outputPath}\n`);
 };
 
 export const createCli = (
@@ -163,10 +189,14 @@ export const createCli = (
   followersCommand.action(
     async (username: string | undefined, options: WallOptions) => {
       const token = requireToken(options.githubToken);
+
       const headers = dependencies.createHeaders(token);
 
-      const resolvedUsername =
-        username ?? (await dependencies.fetchUsername(headers));
+      const resolvedUsername = await resolveUsername(
+        username,
+        headers,
+        dependencies
+      );
 
       const graph = await dependencies.generateFollowersGraph(
         resolvedUsername,
@@ -178,10 +208,7 @@ export const createCli = (
 
       const outputPath = await saveGraph(graph, options.output, dependencies);
 
-      dependencies.writeOutput(
-        `Community wall generated for @${resolvedUsername}\n`
-      );
-      dependencies.writeOutput(`Saved to: ${outputPath}\n`);
+      writeResult(`@${resolvedUsername}`, outputPath, dependencies);
     }
   );
 
@@ -197,6 +224,7 @@ export const createCli = (
   contributorsCommand.action(
     async (repository: string, options: ContributorsOptions) => {
       const token = requireToken(options.githubToken);
+
       const headers = dependencies.createHeaders(token);
 
       const graph = await dependencies.generateContributorsGraph(
@@ -210,8 +238,46 @@ export const createCli = (
 
       const outputPath = await saveGraph(graph, options.output, dependencies);
 
-      dependencies.writeOutput(`Community wall generated for ${repository}\n`);
-      dependencies.writeOutput(`Saved to: ${outputPath}\n`);
+      writeResult(repository, outputPath, dependencies);
+    }
+  );
+
+  const sponsorsCommand = addWallOptions(
+    program
+      .command('sponsors')
+      .description(
+        'Generate a community wall from public active GitHub sponsors'
+      )
+      .argument(
+        '[username]',
+        'Sponsored GitHub username; defaults to the authenticated user'
+      ),
+    'Maximum number of sponsors'
+  );
+
+  sponsorsCommand.action(
+    async (username: string | undefined, options: WallOptions) => {
+      const token = requireToken(options.githubToken);
+
+      const headers = dependencies.createHeaders(token);
+
+      const resolvedUsername = await resolveUsername(
+        username,
+        headers,
+        dependencies
+      );
+
+      const graph = await dependencies.generateSponsorsGraph(
+        resolvedUsername,
+        options.imageSize,
+        options.columns,
+        headers,
+        options.limit
+      );
+
+      const outputPath = await saveGraph(graph, options.output, dependencies);
+
+      writeResult(`@${resolvedUsername}`, outputPath, dependencies);
     }
   );
 

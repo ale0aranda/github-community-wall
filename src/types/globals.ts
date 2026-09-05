@@ -33,3 +33,27 @@ export interface GitHubContributor {
   login: string;
   type: string;
 }
+
+export interface GitHubSponsor {
+  avatarUrl: string;
+  login: string;
+  type: 'Organization' | 'User';
+}
+
+export interface SponsorsData {
+  user: {
+    sponsorshipsAsMaintainer: {
+      nodes: {
+        sponsorEntity: GitHubSponsor | null;
+      }[];
+      pageInfo: FollowersPageInfo;
+    };
+  };
+}
+
+export interface GitHubSponsorsGraphQLResponse {
+  data?: {
+    user: SponsorsData['user'] | null;
+  };
+  errors?: GitHubGraphQLErrorItem[];
+}

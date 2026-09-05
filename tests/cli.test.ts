@@ -8,6 +8,7 @@ const createDependencies = (): CliDependencies => ({
   createHeaders: vi.fn().mockReturnValue({
     Authorization: 'Bearer test-token'
   }),
+  generateSponsorsGraph: vi.fn().mockResolvedValue(Buffer.from('image')),
   fetchUsername: vi.fn().mockResolvedValue('authenticated-user'),
   generateContributorsGraph: vi.fn().mockResolvedValue(Buffer.from('image')),
   generateFollowersGraph: vi.fn().mockResolvedValue(Buffer.from('image')),
