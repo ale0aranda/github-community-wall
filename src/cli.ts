@@ -1,11 +1,8 @@
-#!/usr/bin/env node
-
 import {
   mkdir as mkdirFileSystem,
   writeFile as writeFileSystem
 } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
 
 import { Command, InvalidArgumentError } from 'commander';
 
@@ -297,9 +294,3 @@ export const runCli = async (
     process.exitCode = 1;
   }
 };
-
-const entryPath = process.argv[1];
-
-if (entryPath && import.meta.url === pathToFileURL(entryPath).href) {
-  await runCli();
-}

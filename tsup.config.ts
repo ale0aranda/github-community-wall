@@ -1,7 +1,10 @@
 import { defineConfig, type Options } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts', 'src/cli.ts'],
+  entry: {
+    index: 'src/index.ts',
+    cli: 'src/bin.ts'
+  },
   format: 'esm',
   outDir: 'dist',
   platform: 'node',
