@@ -1,4 +1,8 @@
-import { assertGitHubResponse } from '../errors.js';
+import {
+  assertGitHubResponse,
+  GitHubApiError,
+  GitHubGraphQLError
+} from '../errors.js';
 import {
   renderAvatarGrid,
   validateAvatarGridOptions
@@ -32,14 +36,34 @@ export const fetchGraphQL = async (
   const response = await fetch('https://api.github.com/graphql', {
     headers,
     method: 'POST',
-    body: JSON.stringify({ query })
+    body: JSON.stringify({
+      query
+    })
   });
 
-  assertGitHubResponse(response, `fetching followers for @${username}`);
+  const context = `fetching followers for @${username}`;
+
+  assertGitHubResponse(response, context);
 
   const json = (await response.json()) as GitHubGraphQLResponse;
 
-  return json.data;
+  if (json.errors?.length) {
+    throw new GitHubGraphQLError(
+      context,
+      json.errors.map((error) => error.message)
+    );
+  }
+
+  if (!json.data?.user) {
+    throw new GitHubApiError(
+      `GitHub returned invalid GraphQL data while ${context}`,
+      response.status
+    );
+  }
+
+  return {
+    user: json.data.user
+  };
 };
 
 export const fetchFollowersPfps = async (
@@ -66,7 +90,10 @@ export const fetchFollowersPfps = async (
     hasNextPage = pageInfo.hasNextPage;
 
     if (hasNextPage && !cursor) {
-      throw new Error('GitHub returned an invalid pagination cursor');
+      throw new GitHubApiError(
+        'GitHub returned an invalid pagination cursor',
+        200
+      );
     }
   }
 

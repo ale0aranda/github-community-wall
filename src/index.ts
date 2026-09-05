@@ -9,6 +9,7 @@ export {
   assertGitHubResponse,
   GitHubApiError,
   GitHubAuthenticationError,
+  GitHubGraphQLError,
   GitHubNotFoundError,
   GitHubRateLimitError
 } from './errors.js';

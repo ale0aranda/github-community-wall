@@ -105,6 +105,48 @@ describe('fetchGraphQL', () => {
       'GitHub authentication failed while fetching followers for @ale0aranda'
     );
   });
+
+  it('rejects GraphQL errors returned with HTTP 200', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        json: vi.fn().mockResolvedValue({
+          errors: [
+            {
+              message: 'Could not resolve to a User'
+            }
+          ]
+        })
+      })
+    );
+
+    await expect(fetchGraphQL('missing-user', headers)).rejects.toThrow(
+      'GitHub GraphQL request failed while fetching followers for @missing-user'
+    );
+  });
+
+  it('rejects a response without user data', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        json: vi.fn().mockResolvedValue({
+          data: {
+            user: null
+          }
+        })
+      })
+    );
+
+    await expect(fetchGraphQL('missing-user', headers)).rejects.toThrow(
+      'GitHub returned invalid GraphQL data while fetching followers for @missing-user'
+    );
+  });
 });
 
 describe('fetchFollowersPfps', () => {

@@ -8,6 +8,19 @@ export class GitHubApiError extends Error {
   }
 }
 
+export class GitHubGraphQLError extends GitHubApiError {
+  public readonly errors: string[];
+
+  public constructor(context: string, errors: string[]) {
+    super(
+      `GitHub GraphQL request failed while ${context}: ${errors.join('; ')}`,
+      200
+    );
+
+    this.errors = errors;
+  }
+}
+
 export class GitHubAuthenticationError extends GitHubApiError {
   public constructor(context: string) {
     super(`GitHub authentication failed while ${context}`, 401);

@@ -16,8 +16,15 @@ export interface FollowersData {
   };
 }
 
+export interface GitHubGraphQLErrorItem {
+  message: string;
+}
+
 export interface GitHubGraphQLResponse {
-  data: FollowersData;
+  data?: {
+    user: FollowersData['user'] | null;
+  };
+  errors?: GitHubGraphQLErrorItem[];
 }
 
 export interface GitHubContributor {
