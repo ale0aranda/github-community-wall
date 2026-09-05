@@ -42,10 +42,12 @@ describe('fetchAuthenticatedUsername', () => {
   it('throws when authentication fails', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        ok: false,
-        statusText: 'Unauthorized'
-      })
+      vi.fn().mockResolvedValue(
+        new Response(null, {
+          status: 401,
+          statusText: 'Unauthorized'
+        })
+      )
     );
 
     await expect(
@@ -53,7 +55,7 @@ describe('fetchAuthenticatedUsername', () => {
         Authorization: 'Bearer invalid'
       })
     ).rejects.toThrow(
-      'Failed to fetch authenticated GitHub user: Unauthorized'
+      'GitHub authentication failed while fetching the authenticated user'
     );
   });
 

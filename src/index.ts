@@ -6,6 +6,13 @@ export {
   VERSION
 } from './const.js';
 export {
+  assertGitHubResponse,
+  GitHubApiError,
+  GitHubAuthenticationError,
+  GitHubNotFoundError,
+  GitHubRateLimitError
+} from './errors.js';
+export {
   fetchContributors,
   generateContributorsWall,
   parseRepository
