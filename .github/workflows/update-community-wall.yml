@@ -1,4 +1,4 @@
-name: Update community wall
+name: Update community walls
 
 on:
   workflow_dispatch:
@@ -9,12 +9,12 @@ permissions:
   contents: write
 
 concurrency:
-  group: update-community-wall
+  group: update-community-walls
   cancel-in-progress: true
 
 jobs:
-  update-followers:
-    name: Update followers wall
+  update-walls:
+    name: Update community walls
     runs-on: ubuntu-latest
 
     steps:
@@ -45,16 +45,26 @@ jobs:
             --columns 10 \
             --limit 100
 
-      - name: Commit updated wall
+      - name: Generate contributors wall
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          git add assets/followers.png
+          node dist/cli.js contributors "${{ github.repository }}" \
+            --output assets/contributors.png \
+            --image-size 64 \
+            --columns 10 \
+            --limit 100
+
+      - name: Commit updated walls
+        run: |
+          git add assets/followers.png assets/contributors.png
 
           if git diff --cached --quiet; then
-            echo "Community wall is already up to date."
+            echo "Community walls are already up to date."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "chore: update community wall"
+          git commit -m "chore: update community walls"
           git push
