@@ -1,9 +1,14 @@
 {
   "extends": "@ale0aranda/rules/typescript/node",
   "compilerOptions": {
-    "rootDir": "./src",
-    "types": ["node"]
+    "rootDir": ".",
+    "types": ["node", "vitest/globals"]
   },
-  "include": ["src/**/*.ts"],
+  "include": [
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "tsup.config.ts",
+    "vitest.config.ts"
+  ],
   "exclude": ["node_modules", "dist", "coverage", "assets"]
 }
