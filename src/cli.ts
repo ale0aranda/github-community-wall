@@ -16,6 +16,7 @@ import {
   OUTPUT_FILE,
   VERSION
 } from './const.js';
+import { generateContributorsWall } from './fetchers/contributors-fetcher.js';
 import { generateGraph } from './fetchers/graph-fetcher.js';
 import {
   createGitHubHeaders,
@@ -24,7 +25,7 @@ import {
 
 import type { GitHubHeaders } from './fetchers/graph-fetcher.js';
 
-interface FollowersOptions {
+interface WallOptions {
   columns: number;
   githubToken?: string;
   imageSize: number;
@@ -32,9 +33,21 @@ interface FollowersOptions {
   output: string;
 }
 
+interface ContributorsOptions extends WallOptions {
+  includeBots: boolean;
+}
+
 export interface CliDependencies {
   createHeaders: (token: string) => GitHubHeaders;
   fetchUsername: (headers: GitHubHeaders) => Promise<string>;
+  generateContributorsGraph: (
+    repository: string,
+    imageSize: number,
+    columns: number,
+    headers: GitHubHeaders,
+    limit: number,
+    includeBots: boolean
+  ) => Promise<Buffer>;
   generateFollowersGraph: (
     username: string,
     imageSize: number,
@@ -50,6 +63,7 @@ export interface CliDependencies {
 const defaultDependencies: CliDependencies = {
   createHeaders: createGitHubHeaders,
   fetchUsername: fetchAuthenticatedUsername,
+  generateContributorsGraph: generateContributorsWall,
   generateFollowersGraph: generateGraph,
   makeDirectory: async (path) => {
     await mkdirFileSystem(path, {
@@ -74,24 +88,8 @@ const parsePositiveInteger = (value: string): number => {
   return parsedValue;
 };
 
-export const createCli = (
-  dependencies: CliDependencies = defaultDependencies
-): Command => {
-  const program = new Command();
-
-  program
-    .name('github-community-wall')
-    .description('Generate dynamic GitHub community walls')
-    .version(VERSION)
-    .showHelpAfterError();
-
-  program
-    .command('followers')
-    .description('Generate a community wall from GitHub followers')
-    .argument(
-      '[username]',
-      'GitHub username; defaults to the authenticated user'
-    )
+const addWallOptions = (command: Command, limitDescription: string): Command =>
+  command
     .option(
       '-t, --github-token <token>',
       'GitHub personal access token',
@@ -112,18 +110,60 @@ export const createCli = (
     )
     .option(
       '-l, --limit <count>',
-      'Maximum number of followers',
+      limitDescription,
       parsePositiveInteger,
       FOLLOWERS_LIMIT
-    )
-    .action(async (username: string | undefined, options: FollowersOptions) => {
-      if (!options.githubToken) {
-        throw new InvalidArgumentError(
-          'Missing GitHub token. Set GITHUB_TOKEN or use --github-token.'
-        );
-      }
+    );
 
-      const headers = dependencies.createHeaders(options.githubToken);
+const requireToken = (token: string | undefined): string => {
+  if (!token) {
+    throw new InvalidArgumentError(
+      'Missing GitHub token. Set GITHUB_TOKEN or use --github-token.'
+    );
+  }
+
+  return token;
+};
+
+const saveGraph = async (
+  graph: Buffer,
+  output: string,
+  dependencies: CliDependencies
+): Promise<string> => {
+  const outputPath = resolve(output);
+
+  await dependencies.makeDirectory(dirname(outputPath));
+  await dependencies.saveFile(outputPath, graph);
+
+  return outputPath;
+};
+
+export const createCli = (
+  dependencies: CliDependencies = defaultDependencies
+): Command => {
+  const program = new Command();
+
+  program
+    .name('github-community-wall')
+    .description('Generate dynamic GitHub community walls')
+    .version(VERSION)
+    .showHelpAfterError();
+
+  const followersCommand = addWallOptions(
+    program
+      .command('followers')
+      .description('Generate a community wall from GitHub followers')
+      .argument(
+        '[username]',
+        'GitHub username; defaults to the authenticated user'
+      ),
+    'Maximum number of followers'
+  );
+
+  followersCommand.action(
+    async (username: string | undefined, options: WallOptions) => {
+      const token = requireToken(options.githubToken);
+      const headers = dependencies.createHeaders(token);
 
       const resolvedUsername =
         username ?? (await dependencies.fetchUsername(headers));
@@ -136,18 +176,44 @@ export const createCli = (
         options.limit
       );
 
-      const outputPath = resolve(options.output);
-
-      await dependencies.makeDirectory(dirname(outputPath));
-
-      await dependencies.saveFile(outputPath, graph);
+      const outputPath = await saveGraph(graph, options.output, dependencies);
 
       dependencies.writeOutput(
         `Community wall generated for @${resolvedUsername}\n`
       );
-
       dependencies.writeOutput(`Saved to: ${outputPath}\n`);
-    });
+    }
+  );
+
+  const contributorsCommand = addWallOptions(
+    program
+      .command('contributors')
+      .description('Generate a community wall from repository contributors')
+      .argument('<repository>', 'GitHub repository in owner/name format')
+      .option('--include-bots', 'Include bot accounts', false),
+    'Maximum number of contributors'
+  );
+
+  contributorsCommand.action(
+    async (repository: string, options: ContributorsOptions) => {
+      const token = requireToken(options.githubToken);
+      const headers = dependencies.createHeaders(token);
+
+      const graph = await dependencies.generateContributorsGraph(
+        repository,
+        options.imageSize,
+        options.columns,
+        headers,
+        options.limit,
+        options.includeBots
+      );
+
+      const outputPath = await saveGraph(graph, options.output, dependencies);
+
+      dependencies.writeOutput(`Community wall generated for ${repository}\n`);
+      dependencies.writeOutput(`Saved to: ${outputPath}\n`);
+    }
+  );
 
   return program;
 };

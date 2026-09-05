@@ -19,3 +19,10 @@ export interface FollowersData {
 export interface GitHubGraphQLResponse {
   data: FollowersData;
 }
+
+export interface GitHubContributor {
+  avatarUrl: string;
+  contributions: number;
+  login: string;
+  type: string;
+}

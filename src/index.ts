@@ -6,6 +6,11 @@ export {
   VERSION
 } from './const.js';
 export {
+  fetchContributors,
+  generateContributorsWall,
+  parseRepository
+} from './fetchers/contributors-fetcher.js';
+export {
   fetchFollowersPfps,
   fetchGraphQL,
   generateGraph
@@ -22,6 +27,7 @@ export type { AvatarGridOptions } from './renderer/avatar-grid-renderer.js';
 export type {
   FollowersData,
   FollowersPageInfo,
+  GitHubContributor,
   GitHubFollower,
   GitHubGraphQLResponse
 } from './types/globals.js';
