@@ -22,6 +22,71 @@ describe('GitHub Community Wall CLI', () => {
     delete process.env['GITHUB_TOKEN'];
   });
 
+  it('generates a sponsors wall', async () => {
+    const dependencies = createDependencies();
+    const cli = createCli(dependencies);
+
+    await cli.parseAsync(
+      [
+        'sponsors',
+        'ale0aranda',
+        '--github-token',
+        'test-token',
+        '--output',
+        'assets/sponsors.png',
+        '--image-size',
+        '80',
+        '--columns',
+        '5',
+        '--limit',
+        '25'
+      ],
+      {
+        from: 'user'
+      }
+    );
+
+    expect(dependencies.generateSponsorsGraph).toHaveBeenCalledWith(
+      'ale0aranda',
+      80,
+      5,
+      {
+        Authorization: 'Bearer test-token'
+      },
+      25
+    );
+
+    expect(dependencies.saveFile).toHaveBeenCalledWith(
+      resolve('assets/sponsors.png'),
+      Buffer.from('image')
+    );
+
+    expect(dependencies.writeOutput).toHaveBeenCalledWith(
+      'Community wall generated for @ale0aranda\n'
+    );
+  });
+
+  it('uses the authenticated user for sponsors by default', async () => {
+    const dependencies = createDependencies();
+    const cli = createCli(dependencies);
+
+    await cli.parseAsync(['sponsors', '--github-token', 'test-token'], {
+      from: 'user'
+    });
+
+    expect(dependencies.fetchUsername).toHaveBeenCalledOnce();
+
+    expect(dependencies.generateSponsorsGraph).toHaveBeenCalledWith(
+      'authenticated-user',
+      64,
+      10,
+      {
+        Authorization: 'Bearer test-token'
+      },
+      100
+    );
+  });
+
   it('generates a followers wall', async () => {
     const dependencies = createDependencies();
     const cli = createCli(dependencies);
