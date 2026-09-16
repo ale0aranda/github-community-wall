@@ -18,8 +18,8 @@
   "scripts": {
     "build": "tsup",
     "changeset": "changeset",
-    "release:version": "changeset version",
-    "release:publish": "pnpm check && pnpm test && pnpm build && changeset publish",
+    "changeset:version": "changeset version",
+    "release": "pnpm check && pnpm test && pnpm build && changeset publish",
     "check": "pnpm check:biome && pnpm check:typescript",
     "check:biome": "biome ci .",
     "check:typescript": "tsc --noEmit",
