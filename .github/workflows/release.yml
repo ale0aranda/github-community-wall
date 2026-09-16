@@ -5,45 +5,49 @@ on:
     branches:
       - main
 
-permissions:
-  contents: write
-  pull-requests: write
-
 concurrency:
   group: release
   cancel-in-progress: false
 
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
 jobs:
   release:
-    name: Version or publish package
+    name: Version and publish
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 11.5.1
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://registry.npmjs.org
-          cache: pnpm
+          package-manager-cache: false
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Create release pull request or publish package
+      - name: Check
+        run: pnpm check
+
+      - name: Create release pull request or publish
         uses: changesets/action@v1
         with:
-          version: pnpm release:version
-          publish: pnpm release:publish
-          title: "chore: version packages"
-          commit: "chore: version packages"
+          version: pnpm changeset:version
+          publish: pnpm release
+          title: "📦 chore(release): version package"
+          commit: "📦 chore(release): version package"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
