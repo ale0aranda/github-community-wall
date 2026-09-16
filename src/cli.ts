@@ -29,6 +29,7 @@ interface WallOptions {
   imageSize: number;
   limit: number;
   output: string;
+  twitterBanner?: boolean;
 }
 
 interface ContributorsOptions extends WallOptions {
@@ -51,7 +52,8 @@ export interface CliDependencies {
     imageSize: number,
     columns: number,
     headers: GitHubHeaders,
-    limit: number
+    limit: number,
+    twitterBanner?: boolean
   ) => Promise<Buffer>;
   generateSponsorsGraph: (
     username: string,
@@ -182,6 +184,10 @@ export const createCli = (
       ),
     'Maximum number of followers'
   );
+  followersCommand.option(
+    '--twitter-banner',
+    'Generate a 1500x500 Twitter/X banner instead of a square wall'
+  );
 
   followersCommand.action(
     async (username: string | undefined, options: WallOptions) => {
@@ -195,13 +201,22 @@ export const createCli = (
         dependencies
       );
 
-      const graph = await dependencies.generateFollowersGraph(
-        resolvedUsername,
-        options.imageSize,
-        options.columns,
-        headers,
-        options.limit
-      );
+      const graph = options.twitterBanner
+        ? await dependencies.generateFollowersGraph(
+            resolvedUsername,
+            options.imageSize,
+            options.columns,
+            headers,
+            options.limit,
+            true
+          )
+        : await dependencies.generateFollowersGraph(
+            resolvedUsername,
+            options.imageSize,
+            options.columns,
+            headers,
+            options.limit
+          );
 
       const outputPath = await saveGraph(graph, options.output, dependencies);
 

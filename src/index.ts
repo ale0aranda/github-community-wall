@@ -3,6 +3,7 @@ export {
   FOLLOWERS_LIMIT,
   IMAGE_SIZE,
   OUTPUT_FILE,
+  TWITTER_BANNER_LIMIT,
   VERSION
 } from './const.js';
 export {
@@ -33,10 +34,16 @@ export {
   createGitHubHeaders,
   fetchAuthenticatedUsername
 } from './github-client.js';
-export { renderAvatarGrid } from './renderer/avatar-grid-renderer.js';
+export {
+  renderAvatarGrid,
+  renderTwitterBanner
+} from './renderer/avatar-grid-renderer.js';
 
 export type { GitHubHeaders } from './fetchers/graph-fetcher.js';
-export type { AvatarGridOptions } from './renderer/avatar-grid-renderer.js';
+export type {
+  AvatarGridOptions,
+  TwitterBannerOptions
+} from './renderer/avatar-grid-renderer.js';
 export type {
   FollowersData,
   FollowersPageInfo,

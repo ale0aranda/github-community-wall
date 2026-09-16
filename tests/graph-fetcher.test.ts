@@ -16,7 +16,14 @@ const canvasMocks = vi.hoisted(() => ({
 vi.mock('@napi-rs/canvas', () => ({
   createCanvas: vi.fn(() => ({
     getContext: vi.fn(() => ({
-      drawImage: canvasMocks.drawImage
+      arc: vi.fn(),
+      beginPath: vi.fn(),
+      clip: vi.fn(),
+      drawImage: canvasMocks.drawImage,
+      fillRect: vi.fn(),
+      fillText: vi.fn(),
+      restore: vi.fn(),
+      save: vi.fn()
     })),
     toBuffer: canvasMocks.toBuffer
   }))
@@ -280,5 +287,28 @@ describe('generateGraph', () => {
     await expect(generateGraph('ale0aranda', 64, 0, headers)).rejects.toThrow(
       'Columns must be greater than zero'
     );
+  });
+
+  it('renders a Twitter banner when requested', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(createFollowersResponse(['avatar-1']))
+    );
+
+    const image = { id: 1 };
+
+    vi.mocked(fetchImages).mockResolvedValue([image] as never);
+
+    await generateGraph('ale0aranda', 64, 10, headers, 100, true);
+
+    expect(createCanvas).toHaveBeenCalledWith(1500, 500);
+    expect(canvasMocks.drawImage).toHaveBeenLastCalledWith(
+      image,
+      0,
+      0,
+      1500,
+      500
+    );
+    expect(canvasMocks.toBuffer).toHaveBeenCalledWith('image/png');
   });
 });

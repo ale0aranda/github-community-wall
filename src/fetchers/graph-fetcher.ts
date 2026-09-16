@@ -1,3 +1,4 @@
+import { TWITTER_BANNER_LIMIT } from '../const.js';
 import {
   assertGitHubResponse,
   GitHubApiError,
@@ -5,6 +6,7 @@ import {
 } from '../errors.js';
 import {
   renderAvatarGrid,
+  renderTwitterBanner,
   validateAvatarGridOptions
 } from '../renderer/avatar-grid-renderer.js';
 
@@ -105,7 +107,8 @@ export const generateGraph = async (
   imageSize: number,
   columns: number,
   headers: GitHubHeaders,
-  limit = 100
+  limit = 100,
+  twitterBanner = false
 ): Promise<Buffer> => {
   const renderOptions = {
     columns,
@@ -114,7 +117,15 @@ export const generateGraph = async (
 
   validateAvatarGridOptions(renderOptions);
 
-  const avatarUrls = await fetchFollowersPfps(username, headers, limit);
+  const avatarUrls = await fetchFollowersPfps(
+    username,
+    headers,
+    twitterBanner ? Math.min(limit, TWITTER_BANNER_LIMIT) : limit
+  );
+
+  if (twitterBanner) {
+    return renderTwitterBanner(avatarUrls, { imageSize });
+  }
 
   return renderAvatarGrid(avatarUrls, renderOptions);
 };

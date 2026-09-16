@@ -45,6 +45,16 @@ jobs:
             --columns 10 \
             --limit 100
 
+      - name: Generate followers Twitter banner
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          node dist/cli.js followers "${{ github.repository_owner }}" \
+            --twitter-banner \
+            --output assets/followers-banner.png \
+            --image-size 64 \
+            --limit 100
+
       - name: Generate contributors wall
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -57,7 +67,7 @@ jobs:
 
       - name: Commit updated walls
         run: |
-          git add assets/followers.png assets/contributors.png
+          git add assets/followers.png assets/followers-banner.png assets/contributors.png
 
           if git diff --cached --quiet; then
             echo "Community walls are already up to date."

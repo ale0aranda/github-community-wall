@@ -152,6 +152,37 @@ describe('GitHub Community Wall CLI', () => {
     );
   });
 
+  it('generates a Twitter banner when requested', async () => {
+    const dependencies = createDependencies();
+    const cli = createCli(dependencies);
+
+    await cli.parseAsync(
+      [
+        'followers',
+        'ale0aranda',
+        '--github-token',
+        'test-token',
+        '--twitter-banner'
+      ],
+      {
+        from: 'user'
+      }
+    );
+
+    const generateFollowersGraph = vi.mocked(
+      dependencies.generateFollowersGraph
+    );
+
+    expect(generateFollowersGraph).toHaveBeenCalledTimes(1);
+    const call = generateFollowersGraph.mock.calls[0];
+
+    expect(call?.[0]).toBe('ale0aranda');
+    expect(call?.[1]).toBe(64);
+    expect(call?.[2]).toBe(10);
+    expect(call?.[4]).toBe(100);
+    expect(call?.[5]).toBe(true);
+  });
+
   it('generates a contributors wall', async () => {
     const dependencies = createDependencies();
     const cli = createCli(dependencies);
