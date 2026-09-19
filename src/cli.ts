@@ -172,6 +172,14 @@ export const createCli = (
     .name('github-community-wall')
     .description('Generate dynamic GitHub community walls')
     .version(VERSION)
+    .addHelpText(
+      'after',
+      '\nExamples:\n' +
+        '  $ github-community-wall followers octocat\n' +
+        '  $ github-community-wall contributors owner/repository\n' +
+        '  $ github-community-wall sponsors octocat --background "#0d1117"\n' +
+        '  $ github-community-wall stargazers owner/repository\n'
+    )
     .showHelpAfterError();
 
   const followersCommand = addWallOptions(
