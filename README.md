@@ -1,6 +1,6 @@
 # github-community-wall
 
-Generate polished PNG community walls from GitHub followers, contributors, sponsors, stargazers, and watchers.
+Generate polished community walls from GitHub followers, contributors, sponsors, stargazers, watchers, and organization members.
 
 ![Followers wall](./assets/followers.png)
 
@@ -45,6 +45,7 @@ github-community-wall sponsors owner --background "#0d1117"
 # Stargazers or watchers of a repository
 github-community-wall stargazers owner/repository
 github-community-wall watchers owner/repository
+github-community-wall members organization
 
 # A ready-to-upload 1500x500 X/Twitter banner
 github-community-wall followers owner \

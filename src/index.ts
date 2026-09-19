@@ -27,8 +27,10 @@ export {
 } from './fetchers/graph-fetcher.js';
 export { fetchImages } from './fetchers/images-fetcher.js';
 export {
+  fetchOrganizationMembers,
   fetchStargazers,
   fetchWatchers,
+  generateOrganizationMembersWall,
   generateRepositoryUsersWall
 } from './fetchers/repository-users-fetcher.js';
 export {
@@ -45,7 +47,12 @@ export {
   renderTwitterBanner
 } from './renderer/avatar-grid-renderer.js';
 
+export type { WallConfig } from './config.js';
 export type { GitHubHeaders } from './fetchers/graph-fetcher.js';
+export type {
+  FetchImagesOptions,
+  ImageFetchWarning
+} from './fetchers/images-fetcher.js';
 export type {
   AvatarGridOptions,
   TwitterBannerOptions

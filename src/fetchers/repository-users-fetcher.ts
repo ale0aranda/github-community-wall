@@ -47,6 +47,46 @@ const fetchRepositoryUsers = async (
   return avatars.slice(0, limit);
 };
 
+export const fetchOrganizationMembers = async (
+  organization: string,
+  headers: GitHubHeaders,
+  limit = 100
+): Promise<string[]> => {
+  if (limit <= 0) {
+    return [];
+  }
+
+  const avatars: string[] = [];
+  let page = 1;
+
+  while (avatars.length < limit) {
+    const url = new URL(
+      `https://api.github.com/orgs/${encodeURIComponent(organization)}/members`
+    );
+    url.searchParams.set('per_page', '100');
+    url.searchParams.set('page', page.toString());
+
+    const response = await fetch(url, { headers });
+    assertGitHubResponse(
+      response,
+      `fetching members for the ${organization} organization`
+    );
+    const members = (await response.json()) as RepositoryUser[];
+
+    avatars.push(
+      ...members.flatMap((member) =>
+        member.avatar_url ? [member.avatar_url] : []
+      )
+    );
+    if (members.length < 100) {
+      break;
+    }
+    page += 1;
+  }
+
+  return avatars.slice(0, limit);
+};
+
 export const fetchStargazers = (
   repository: string,
   headers: GitHubHeaders,
@@ -79,5 +119,18 @@ export const generateRepositoryUsersWall = async (
     source === 'stargazers'
       ? await fetchStargazers(repository, headers, limit)
       : await fetchWatchers(repository, headers, limit);
+  return renderAvatarGrid(avatars, options);
+};
+
+export const generateOrganizationMembersWall = async (
+  organization: string,
+  imageSize: number,
+  columns: number,
+  headers: GitHubHeaders,
+  limit = 100,
+  options: Parameters<typeof renderAvatarGrid>[1] = { imageSize, columns }
+): Promise<Buffer> => {
+  validateAvatarGridOptions(options);
+  const avatars = await fetchOrganizationMembers(organization, headers, limit);
   return renderAvatarGrid(avatars, options);
 };

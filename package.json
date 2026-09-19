@@ -1,7 +1,7 @@
 {
   "name": "github-community-wall",
   "version": "1.1.0",
-  "description": "Generate dynamic GitHub community walls for followers, contributors, and sponsors",
+  "description": "Generate polished GitHub community walls for followers, contributors, sponsors, stargazers, watchers, and organizations",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -36,8 +36,14 @@
     "followers",
     "contributors",
     "sponsors",
+    "stargazers",
+    "watchers",
+    "organizations",
     "avatars",
-    "readme"
+    "readme",
+    "github-actions",
+    "svg",
+    "webp"
   ],
   "author": {
     "name": "Alejandro Arancibia",

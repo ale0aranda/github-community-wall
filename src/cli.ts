@@ -85,6 +85,14 @@ export interface CliDependencies {
     limit: number,
     options?: AvatarGridOptions
   ) => Promise<Buffer>;
+  generateOrganizationMembersGraph?: (
+    organization: string,
+    imageSize: number,
+    columns: number,
+    headers: GitHubHeaders,
+    limit: number,
+    options?: AvatarGridOptions
+  ) => Promise<Buffer>;
   makeDirectory: (path: string) => Promise<void>;
   saveFile: (path: string, content: Buffer) => Promise<void>;
   writeOutput: (message: string) => void;
@@ -111,6 +119,26 @@ const defaultDependencies: CliDependencies = {
     return generateRepositoryUsersWall(
       repository,
       source,
+      imageSize,
+      columns,
+      headers,
+      limit,
+      options
+    );
+  },
+  generateOrganizationMembersGraph: async (
+    organization,
+    imageSize,
+    columns,
+    headers,
+    limit,
+    options
+  ) => {
+    const { generateOrganizationMembersWall } = await import(
+      './fetchers/repository-users-fetcher.js'
+    );
+    return generateOrganizationMembersWall(
+      organization,
       imageSize,
       columns,
       headers,
@@ -304,6 +332,7 @@ export const createCli = (
         + '  $ github-community-wall contributors owner/repository\n'
         + '  $ github-community-wall sponsors octocat --background "#0d1117"\n'
         + '  $ github-community-wall stargazers owner/repository\n'
+        + '  $ github-community-wall members organization\n'
     )
     .showHelpAfterError();
 
@@ -505,6 +534,7 @@ export const createCli = (
         if (!dependencies.generateRepositoryUsersGraph) {
           throw new Error(`The ${source} source is not configured`);
         }
+
         const graph = await dependencies.generateRepositoryUsersGraph(
           repository,
           source,
@@ -528,6 +558,46 @@ export const createCli = (
       }
     );
   }
+
+  const membersCommand = addWallOptions(
+    program
+      .command('members')
+      .description('Generate a community wall from organization members')
+      .argument('<organization>', 'GitHub organization login'),
+    'Maximum number of organization members'
+  );
+
+  membersCommand.action(
+    async (organization: string, rawOptions: WallOptions) => {
+      const options = await resolveWallOptions(rawOptions);
+      const token = requireToken(options.githubToken);
+      const headers = dependencies.createHeaders(token);
+
+      if (!dependencies.generateOrganizationMembersGraph) {
+        throw new Error('The members source is not configured');
+      }
+
+      const graph = await dependencies.generateOrganizationMembersGraph(
+        organization,
+        options.imageSize,
+        options.columns,
+        headers,
+        options.limit,
+        hasCustomRenderOptions(options) ? getRenderOptions(options) : undefined
+      );
+      const outputPath = options.dryRun
+        ? resolve(options.output)
+        : await saveGraph(graph, options.output, dependencies);
+
+      if (options.json) {
+        dependencies.writeOutput(
+          `${JSON.stringify({ subject: organization, source: 'members', output: outputPath, dryRun: options.dryRun })}\n`
+        );
+      } else {
+        writeResult(organization, outputPath, dependencies);
+      }
+    }
+  );
 
   return program;
 };
