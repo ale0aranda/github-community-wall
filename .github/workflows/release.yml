@@ -45,11 +45,6 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Verify npm package access
-        run: npm access list packages "$(npm whoami)"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
       - name: Create release pull request or publish
         uses: changesets/action@v1
         with:
