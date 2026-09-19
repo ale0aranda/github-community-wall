@@ -1,6 +1,6 @@
 {
   "name": "github-community-wall",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Generate polished GitHub community walls for followers, contributors, sponsors, stargazers, watchers, and organizations",
   "type": "module",
   "main": "./dist/index.js",
