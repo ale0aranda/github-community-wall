@@ -1,22 +1,20 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, mergeConfig } from 'vitest/config';
 
-export default defineConfig({
-  test: {
-    clearMocks: true,
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'html'],
-      include: [
-        'src/fetchers/**/*.ts',
-        'src/renderer/**/*.ts',
-        'src/github-client.ts'
-      ],
-      thresholds: {
-        branches: 80,
-        functions: 80,
-        lines: 80,
-        statements: 80
+import rulesConfig from '@ale0aranda/rules/vitest/node';
+
+export default mergeConfig(
+  rulesConfig,
+  defineConfig({
+    test: {
+      mockReset: false,
+      restoreMocks: false,
+      coverage: {
+        include: [
+          'src/fetchers/**/*.ts',
+          'src/renderer/**/*.ts',
+          'src/github-client.ts'
+        ]
       }
     }
-  }
-});
+  })
+);
