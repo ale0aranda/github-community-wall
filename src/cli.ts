@@ -2,7 +2,7 @@ import {
   mkdir as mkdirFileSystem,
   writeFile as writeFileSystem
 } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { dirname, extname, resolve } from 'node:path';
 
 import { Command, InvalidArgumentError } from 'commander';
 
@@ -141,6 +141,16 @@ const parsePositiveInteger = (value: string): number => {
   return parsedValue;
 };
 
+const parseNonNegativeInteger = (value: string): number => {
+  const parsedValue = Number(value);
+
+  if (!Number.isInteger(parsedValue) || parsedValue < 0) {
+    throw new InvalidArgumentError('The value must be a non-negative integer');
+  }
+
+  return parsedValue;
+};
+
 const addWallOptions = (command: Command, limitDescription: string): Command =>
   command
     .option(
@@ -166,7 +176,7 @@ const addWallOptions = (command: Command, limitDescription: string): Command =>
     )
     .option('-l, --limit <count>', limitDescription, parsePositiveInteger)
     .option('--background <color>', 'Background color')
-    .option('--gap <pixels>', 'Space between avatars', parsePositiveInteger)
+    .option('--gap <pixels>', 'Space between avatars', parseNonNegativeInteger)
     .option('--shape <shape>', 'Avatar shape (square or circle)')
     .option('--format <format>', 'Output format (png, webp, or svg)')
     .option('--title <text>', 'Optional title')
@@ -182,16 +192,32 @@ const resolveWallOptions = async (
 ): Promise<WallOptions> => {
   const config = await loadConfig(options.config);
   const merged = mergeConfig(config, options);
+  const output = merged.output ?? OUTPUT_FILE;
+  const extensionFormat = extname(output).slice(1).toLowerCase();
+  const inferredFormat =
+    extensionFormat === 'svg' || extensionFormat === 'webp'
+      ? extensionFormat
+      : 'png';
+  const format = merged.format ?? inferredFormat;
+
+  if (format !== 'png' && format !== 'webp' && format !== 'svg') {
+    throw new InvalidArgumentError('Format must be png, webp, or svg');
+  }
+
+  if (merged.shape && merged.shape !== 'square' && merged.shape !== 'circle') {
+    throw new InvalidArgumentError('Shape must be square or circle');
+  }
+
   return {
     columns: merged.columns ?? COLUMNS,
     githubToken: merged.githubToken ?? process.env['GITHUB_TOKEN'],
     imageSize: merged.imageSize ?? IMAGE_SIZE,
     limit: merged.limit ?? FOLLOWERS_LIMIT,
-    output: merged.output ?? OUTPUT_FILE,
+    output,
     background: merged.background,
     config: options.config,
     dryRun: merged.dryRun,
-    format: merged.format,
+    format,
     gap: merged.gap,
     json: merged.json,
     shape: merged.shape,
@@ -219,7 +245,7 @@ const hasCustomRenderOptions = (options: WallOptions): boolean =>
       || options.shape
       || options.title
       || options.subtitle
-      || options.format
+      || (options.format && options.format !== 'png')
   );
 
 const requireToken = (token: string | undefined): string => {
