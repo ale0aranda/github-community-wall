@@ -1,3 +1,4 @@
+export { loadConfig, mergeConfig } from './config.js';
 export {
   COLUMNS,
   FOLLOWERS_LIMIT,
@@ -25,6 +26,11 @@ export {
   generateGraph
 } from './fetchers/graph-fetcher.js';
 export { fetchImages } from './fetchers/images-fetcher.js';
+export {
+  fetchStargazers,
+  fetchWatchers,
+  generateRepositoryUsersWall
+} from './fetchers/repository-users-fetcher.js';
 export {
   fetchSponsors,
   fetchSponsorsGraphQL,

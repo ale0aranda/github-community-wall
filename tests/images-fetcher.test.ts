@@ -34,26 +34,36 @@ describe('fetchImages', () => {
 
     expect(result).toEqual([image]);
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://avatars.githubusercontent.com/u/1?v=4&size=96'
+      'https://avatars.githubusercontent.com/u/1?v=4&size=96',
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
     );
     expect(loadImage).toHaveBeenCalledOnce();
   });
 
-  it('ignores images that cannot be downloaded', async () => {
+  it('warns when an image cannot be downloaded after retries', async () => {
+    const onWarning = vi.fn();
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
-        ok: false
+        ok: false,
+        status: 503
       })
     );
 
     const result = await fetchImages(
       ['https://avatars.githubusercontent.com/u/1'],
-      64
+      64,
+      { retries: 2, onWarning }
     );
 
     expect(result).toEqual([]);
     expect(loadImage).not.toHaveBeenCalled();
+    expect(onWarning).toHaveBeenCalledWith({
+      url: 'https://avatars.githubusercontent.com/u/1',
+      error: new Error('Image request failed with status 503'),
+      attempts: 3
+    });
+    expect(fetch).toHaveBeenCalledTimes(3);
   });
 
   it('downloads multiple images', async () => {
@@ -87,5 +97,32 @@ describe('fetchImages', () => {
 
     expect(result).toEqual([firstImage, secondImage]);
     expect(loadImage).toHaveBeenCalledTimes(2);
+  });
+
+  it('aborts timed out requests and retries them', async () => {
+    const onWarning = vi.fn();
+    const fetchMock = vi.fn().mockImplementation((_url, { signal }) => {
+      return new Promise((_resolve, reject) => {
+        signal.addEventListener('abort', () =>
+          reject(new DOMException('The operation was aborted', 'AbortError'))
+        );
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const resultPromise = fetchImages(
+      ['https://avatars.githubusercontent.com/u/1'],
+      64,
+      { timeout: 1, retries: 1, onWarning }
+    );
+
+    await expect(resultPromise).resolves.toEqual([]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(onWarning).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: 'https://avatars.githubusercontent.com/u/1',
+        attempts: 2
+      })
+    );
   });
 });

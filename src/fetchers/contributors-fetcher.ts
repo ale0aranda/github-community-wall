@@ -4,6 +4,7 @@ import {
   validateAvatarGridOptions
 } from '../renderer/avatar-grid-renderer.js';
 
+import type { AvatarGridOptions } from '../renderer/avatar-grid-renderer.js';
 import type { GitHubContributor } from '../types/globals.js';
 import type { GitHubHeaders } from './graph-fetcher.js';
 
@@ -106,11 +107,13 @@ export const generateContributorsWall = async (
   columns: number,
   headers: GitHubHeaders,
   limit = 100,
-  includeBots = false
+  includeBots = false,
+  options?: Partial<AvatarGridOptions>
 ): Promise<Buffer> => {
   const renderOptions = {
     columns,
-    imageSize
+    imageSize,
+    ...options
   };
 
   validateAvatarGridOptions(renderOptions);

@@ -8,6 +8,7 @@ import {
   validateAvatarGridOptions
 } from '../renderer/avatar-grid-renderer.js';
 
+import type { AvatarGridOptions } from '../renderer/avatar-grid-renderer.js';
 import type {
   GitHubSponsor,
   GitHubSponsorsGraphQLResponse,
@@ -129,11 +130,13 @@ export const generateSponsorsWall = async (
   imageSize: number,
   columns: number,
   headers: GitHubHeaders,
-  limit = 100
+  limit = 100,
+  options?: Partial<AvatarGridOptions>
 ): Promise<Buffer> => {
   const renderOptions = {
     columns,
-    imageSize
+    imageSize,
+    ...options
   };
 
   validateAvatarGridOptions(renderOptions);

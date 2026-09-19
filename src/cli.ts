@@ -6,6 +6,7 @@ import { dirname, resolve } from 'node:path';
 
 import { Command, InvalidArgumentError } from 'commander';
 
+import { loadConfig, mergeConfig } from './config.js';
 import {
   COLUMNS,
   FOLLOWERS_LIMIT,
@@ -22,14 +23,24 @@ import {
 } from './github-client.js';
 
 import type { GitHubHeaders } from './fetchers/graph-fetcher.js';
+import type { AvatarGridOptions } from './renderer/avatar-grid-renderer.js';
 
 interface WallOptions {
   columns: number;
-  githubToken?: string;
+  background?: string | undefined;
+  config?: string | undefined;
+  dryRun?: boolean | undefined;
+  format?: 'png' | 'webp' | 'svg' | undefined;
+  gap?: number | undefined;
+  githubToken?: string | undefined;
   imageSize: number;
   limit: number;
   output: string;
-  twitterBanner?: boolean;
+  json?: boolean | undefined;
+  shape?: 'square' | 'circle' | undefined;
+  subtitle?: string | undefined;
+  title?: string | undefined;
+  twitterBanner?: boolean | undefined;
 }
 
 interface ContributorsOptions extends WallOptions {
@@ -45,7 +56,8 @@ export interface CliDependencies {
     columns: number,
     headers: GitHubHeaders,
     limit: number,
-    includeBots: boolean
+    includeBots: boolean,
+    options?: AvatarGridOptions
   ) => Promise<Buffer>;
   generateFollowersGraph: (
     username: string,
@@ -53,14 +65,25 @@ export interface CliDependencies {
     columns: number,
     headers: GitHubHeaders,
     limit: number,
-    twitterBanner?: boolean
+    twitterBanner?: boolean,
+    options?: AvatarGridOptions
   ) => Promise<Buffer>;
   generateSponsorsGraph: (
     username: string,
     imageSize: number,
     columns: number,
     headers: GitHubHeaders,
-    limit: number
+    limit: number,
+    options?: AvatarGridOptions
+  ) => Promise<Buffer>;
+  generateRepositoryUsersGraph?: (
+    repository: string,
+    source: 'stargazers' | 'watchers',
+    imageSize: number,
+    columns: number,
+    headers: GitHubHeaders,
+    limit: number,
+    options?: AvatarGridOptions
   ) => Promise<Buffer>;
   makeDirectory: (path: string) => Promise<void>;
   saveFile: (path: string, content: Buffer) => Promise<void>;
@@ -73,6 +96,28 @@ const defaultDependencies: CliDependencies = {
   generateContributorsGraph: generateContributorsWall,
   generateFollowersGraph: generateGraph,
   generateSponsorsGraph: generateSponsorsWall,
+  generateRepositoryUsersGraph: async (
+    repository,
+    source,
+    imageSize,
+    columns,
+    headers,
+    limit,
+    options
+  ) => {
+    const { generateRepositoryUsersWall } = await import(
+      './fetchers/repository-users-fetcher.js'
+    );
+    return generateRepositoryUsersWall(
+      repository,
+      source,
+      imageSize,
+      columns,
+      headers,
+      limit,
+      options
+    );
+  },
   makeDirectory: async (path) => {
     await mkdirFileSystem(path, {
       recursive: true
@@ -99,29 +144,83 @@ const parsePositiveInteger = (value: string): number => {
 const addWallOptions = (command: Command, limitDescription: string): Command =>
   command
     .option(
+      '--config <path>',
+      'JSON configuration file',
+      '.community-wall.json'
+    )
+    .option(
       '-t, --github-token <token>',
       'GitHub personal access token',
       process.env['GITHUB_TOKEN']
     )
-    .option('-o, --output <path>', 'Output PNG file', OUTPUT_FILE)
+    .option('-o, --output <path>', 'Output image file')
     .option(
       '-s, --image-size <pixels>',
       'Avatar size in pixels',
-      parsePositiveInteger,
-      IMAGE_SIZE
+      parsePositiveInteger
     )
     .option(
       '-c, --columns <count>',
       'Number of avatars per row',
-      parsePositiveInteger,
-      COLUMNS
+      parsePositiveInteger
     )
+    .option('-l, --limit <count>', limitDescription, parsePositiveInteger)
+    .option('--background <color>', 'Background color')
+    .option('--gap <pixels>', 'Space between avatars', parsePositiveInteger)
+    .option('--shape <shape>', 'Avatar shape (square or circle)')
+    .option('--format <format>', 'Output format (png, webp, or svg)')
+    .option('--title <text>', 'Optional title')
+    .option('--subtitle <text>', 'Optional subtitle')
     .option(
-      '-l, --limit <count>',
-      limitDescription,
-      parsePositiveInteger,
-      FOLLOWERS_LIMIT
-    );
+      '--dry-run',
+      'Fetch data and print the result without writing an image'
+    )
+    .option('--json', 'Print machine-readable output');
+
+const resolveWallOptions = async (
+  options: Partial<WallOptions>
+): Promise<WallOptions> => {
+  const config = await loadConfig(options.config);
+  const merged = mergeConfig(config, options);
+  return {
+    columns: merged.columns ?? COLUMNS,
+    githubToken: merged.githubToken ?? process.env['GITHUB_TOKEN'],
+    imageSize: merged.imageSize ?? IMAGE_SIZE,
+    limit: merged.limit ?? FOLLOWERS_LIMIT,
+    output: merged.output ?? OUTPUT_FILE,
+    background: merged.background,
+    config: options.config,
+    dryRun: merged.dryRun,
+    format: merged.format,
+    gap: merged.gap,
+    json: merged.json,
+    shape: merged.shape,
+    subtitle: merged.subtitle,
+    title: merged.title,
+    twitterBanner: merged.twitterBanner
+  };
+};
+
+const getRenderOptions = (options: WallOptions): AvatarGridOptions => ({
+  columns: options.columns,
+  imageSize: options.imageSize,
+  background: options.background,
+  gap: options.gap,
+  shape: options.shape,
+  title: options.title,
+  subtitle: options.subtitle,
+  format: options.format
+});
+
+const hasCustomRenderOptions = (options: WallOptions): boolean =>
+  Boolean(
+    options.background
+      || options.gap !== undefined
+      || options.shape
+      || options.title
+      || options.subtitle
+      || options.format
+  );
 
 const requireToken = (token: string | undefined): string => {
   if (!token) {
@@ -174,11 +273,11 @@ export const createCli = (
     .version(VERSION)
     .addHelpText(
       'after',
-      '\nExamples:\n' +
-        '  $ github-community-wall followers octocat\n' +
-        '  $ github-community-wall contributors owner/repository\n' +
-        '  $ github-community-wall sponsors octocat --background "#0d1117"\n' +
-        '  $ github-community-wall stargazers owner/repository\n'
+      '\nExamples:\n'
+        + '  $ github-community-wall followers octocat\n'
+        + '  $ github-community-wall contributors owner/repository\n'
+        + '  $ github-community-wall sponsors octocat --background "#0d1117"\n'
+        + '  $ github-community-wall stargazers owner/repository\n'
     )
     .showHelpAfterError();
 
@@ -198,7 +297,8 @@ export const createCli = (
   );
 
   followersCommand.action(
-    async (username: string | undefined, options: WallOptions) => {
+    async (username: string | undefined, rawOptions: WallOptions) => {
+      const options = await resolveWallOptions(rawOptions);
       const token = requireToken(options.githubToken);
 
       const headers = dependencies.createHeaders(token);
@@ -209,6 +309,7 @@ export const createCli = (
         dependencies
       );
 
+      const renderOptions = getRenderOptions(options);
       const graph = options.twitterBanner
         ? await dependencies.generateFollowersGraph(
             resolvedUsername,
@@ -216,19 +317,38 @@ export const createCli = (
             options.columns,
             headers,
             options.limit,
-            true
+            true,
+            hasCustomRenderOptions(options) ? renderOptions : undefined
           )
-        : await dependencies.generateFollowersGraph(
-            resolvedUsername,
-            options.imageSize,
-            options.columns,
-            headers,
-            options.limit
-          );
+        : hasCustomRenderOptions(options)
+          ? await dependencies.generateFollowersGraph(
+              resolvedUsername,
+              options.imageSize,
+              options.columns,
+              headers,
+              options.limit,
+              false,
+              renderOptions
+            )
+          : await dependencies.generateFollowersGraph(
+              resolvedUsername,
+              options.imageSize,
+              options.columns,
+              headers,
+              options.limit
+            );
 
-      const outputPath = await saveGraph(graph, options.output, dependencies);
+      const outputPath = options.dryRun
+        ? resolve(options.output)
+        : await saveGraph(graph, options.output, dependencies);
 
-      writeResult(`@${resolvedUsername}`, outputPath, dependencies);
+      if (options.json) {
+        dependencies.writeOutput(
+          `${JSON.stringify({ subject: `@${resolvedUsername}`, output: outputPath, dryRun: options.dryRun })}\n`
+        );
+      } else {
+        writeResult(`@${resolvedUsername}`, outputPath, dependencies);
+      }
     }
   );
 
@@ -242,23 +362,45 @@ export const createCli = (
   );
 
   contributorsCommand.action(
-    async (repository: string, options: ContributorsOptions) => {
+    async (repository: string, rawOptions: ContributorsOptions) => {
+      const options = {
+        ...(await resolveWallOptions(rawOptions)),
+        includeBots: rawOptions.includeBots
+      };
       const token = requireToken(options.githubToken);
 
       const headers = dependencies.createHeaders(token);
 
-      const graph = await dependencies.generateContributorsGraph(
-        repository,
-        options.imageSize,
-        options.columns,
-        headers,
-        options.limit,
-        options.includeBots
-      );
+      const graph = hasCustomRenderOptions(options)
+        ? await dependencies.generateContributorsGraph(
+            repository,
+            options.imageSize,
+            options.columns,
+            headers,
+            options.limit,
+            options.includeBots,
+            getRenderOptions(options)
+          )
+        : await dependencies.generateContributorsGraph(
+            repository,
+            options.imageSize,
+            options.columns,
+            headers,
+            options.limit,
+            options.includeBots
+          );
 
-      const outputPath = await saveGraph(graph, options.output, dependencies);
+      const outputPath = options.dryRun
+        ? resolve(options.output)
+        : await saveGraph(graph, options.output, dependencies);
 
-      writeResult(repository, outputPath, dependencies);
+      if (options.json) {
+        dependencies.writeOutput(
+          `${JSON.stringify({ subject: repository, output: outputPath, dryRun: options.dryRun })}\n`
+        );
+      } else {
+        writeResult(repository, outputPath, dependencies);
+      }
     }
   );
 
@@ -276,7 +418,8 @@ export const createCli = (
   );
 
   sponsorsCommand.action(
-    async (username: string | undefined, options: WallOptions) => {
+    async (username: string | undefined, rawOptions: WallOptions) => {
+      const options = await resolveWallOptions(rawOptions);
       const token = requireToken(options.githubToken);
 
       const headers = dependencies.createHeaders(token);
@@ -287,19 +430,78 @@ export const createCli = (
         dependencies
       );
 
-      const graph = await dependencies.generateSponsorsGraph(
-        resolvedUsername,
-        options.imageSize,
-        options.columns,
-        headers,
-        options.limit
-      );
+      const graph = hasCustomRenderOptions(options)
+        ? await dependencies.generateSponsorsGraph(
+            resolvedUsername,
+            options.imageSize,
+            options.columns,
+            headers,
+            options.limit,
+            getRenderOptions(options)
+          )
+        : await dependencies.generateSponsorsGraph(
+            resolvedUsername,
+            options.imageSize,
+            options.columns,
+            headers,
+            options.limit
+          );
 
-      const outputPath = await saveGraph(graph, options.output, dependencies);
+      const outputPath = options.dryRun
+        ? resolve(options.output)
+        : await saveGraph(graph, options.output, dependencies);
 
-      writeResult(`@${resolvedUsername}`, outputPath, dependencies);
+      if (options.json) {
+        dependencies.writeOutput(
+          `${JSON.stringify({ subject: `@${resolvedUsername}`, output: outputPath, dryRun: options.dryRun })}\n`
+        );
+      } else {
+        writeResult(`@${resolvedUsername}`, outputPath, dependencies);
+      }
     }
   );
+
+  for (const source of ['stargazers', 'watchers'] as const) {
+    const repositoryCommand = addWallOptions(
+      program
+        .command(source)
+        .description(`Generate a community wall from repository ${source}`)
+        .argument('<repository>', 'GitHub repository in owner/name format'),
+      `Maximum number of ${source}`
+    );
+
+    repositoryCommand.action(
+      async (repository: string, rawOptions: WallOptions) => {
+        const options = await resolveWallOptions(rawOptions);
+        const token = requireToken(options.githubToken);
+        const headers = dependencies.createHeaders(token);
+        const renderOptions = getRenderOptions(options);
+        if (!dependencies.generateRepositoryUsersGraph) {
+          throw new Error(`The ${source} source is not configured`);
+        }
+        const graph = await dependencies.generateRepositoryUsersGraph(
+          repository,
+          source,
+          options.imageSize,
+          options.columns,
+          headers,
+          options.limit,
+          hasCustomRenderOptions(options) ? renderOptions : undefined
+        );
+        const outputPath = options.dryRun
+          ? resolve(options.output)
+          : await saveGraph(graph, options.output, dependencies);
+
+        if (options.json) {
+          dependencies.writeOutput(
+            `${JSON.stringify({ subject: repository, source, output: outputPath, dryRun: options.dryRun })}\n`
+          );
+        } else {
+          writeResult(repository, outputPath, dependencies);
+        }
+      }
+    );
+  }
 
   return program;
 };

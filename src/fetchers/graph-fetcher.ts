@@ -10,6 +10,7 @@ import {
   validateAvatarGridOptions
 } from '../renderer/avatar-grid-renderer.js';
 
+import type { AvatarGridOptions } from '../renderer/avatar-grid-renderer.js';
 import type { FollowersData, GitHubGraphQLResponse } from '../types/globals.js';
 
 export type GitHubHeaders = Record<string, string>;
@@ -108,11 +109,13 @@ export const generateGraph = async (
   columns: number,
   headers: GitHubHeaders,
   limit = 100,
-  twitterBanner = false
+  twitterBanner = false,
+  options?: Partial<AvatarGridOptions>
 ): Promise<Buffer> => {
   const renderOptions = {
     columns,
-    imageSize
+    imageSize,
+    ...options
   };
 
   validateAvatarGridOptions(renderOptions);
@@ -124,7 +127,13 @@ export const generateGraph = async (
   );
 
   if (twitterBanner) {
-    return renderTwitterBanner(avatarUrls, { imageSize });
+    return renderTwitterBanner(avatarUrls, {
+      imageSize,
+      background: options?.background,
+      gap: options?.gap,
+      shape: options?.shape,
+      format: options?.format
+    });
   }
 
   return renderAvatarGrid(avatarUrls, renderOptions);
