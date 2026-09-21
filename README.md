@@ -57,6 +57,29 @@ github-community-wall followers owner \
 Run `github-community-wall --help` or `github-community-wall <command> --help`
 for every option.
 
+### CLI utilities
+
+Create a starter configuration file:
+
+```sh
+github-community-wall config init
+```
+
+Validate the configuration file and GitHub token without printing the token:
+
+```sh
+github-community-wall doctor
+github-community-wall doctor --json
+```
+
+Use `--quiet` in scripts when only the generated file matters, or `--verbose`
+to print the resolved rendering options:
+
+```sh
+github-community-wall followers octocat --quiet
+github-community-wall followers octocat --verbose
+```
+
 ## Configuration file
 
 Commands can read defaults from `.community-wall.json` in the current directory:

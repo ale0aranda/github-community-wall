@@ -1,4 +1,5 @@
 import {
+  access,
   mkdir as mkdirFileSystem,
   writeFile as writeFileSystem
 } from 'node:fs/promises';
@@ -43,6 +44,8 @@ interface WallOptions {
   twitterBanner?: boolean | undefined;
   excludeBots?: boolean | undefined;
   sort?: 'login' | 'contributions' | 'none' | undefined;
+  quiet?: boolean | undefined;
+  verbose?: boolean | undefined;
 }
 
 interface ContributorsOptions extends WallOptions {
@@ -99,6 +102,23 @@ export interface CliDependencies {
   saveFile: (path: string, content: Buffer) => Promise<void>;
   writeOutput: (message: string) => void;
 }
+
+const DEFAULT_CONFIG_CONTENT = `${JSON.stringify(
+  {
+    imageSize: IMAGE_SIZE,
+    columns: COLUMNS,
+    limit: FOLLOWERS_LIMIT,
+    background: '#0d1117',
+    gap: 2,
+    shape: 'circle',
+    output: OUTPUT_FILE,
+    format: 'png',
+    excludeBots: true,
+    sort: 'login'
+  },
+  null,
+  2
+)}\n`;
 
 const defaultDependencies: CliDependencies = {
   createHeaders: createGitHubHeaders,
@@ -216,6 +236,8 @@ const addWallOptions = (command: Command, limitDescription: string): Command =>
     .option('--subtitle <text>', 'Optional subtitle')
     .option('--exclude-bots', 'Exclude bot accounts where available')
     .option('--sort <field>', 'Sort by login or contributions')
+    .option('--quiet', 'Suppress success output')
+    .option('--verbose', 'Print resolved options and progress details')
     .option(
       '--dry-run',
       'Fetch data and print the result without writing an image'
@@ -281,7 +303,9 @@ const resolveWallOptions = async (
     title: merged.title,
     twitterBanner: merged.twitterBanner,
     excludeBots: merged.excludeBots,
-    sort: merged.sort
+    sort: merged.sort,
+    quiet: merged.quiet,
+    verbose: merged.verbose
   };
 };
 
@@ -350,6 +374,42 @@ const writeResult = (
   dependencies.writeOutput(`Saved to: ${outputPath}\n`);
 };
 
+const writeVerbose = (
+  options: WallOptions,
+  dependencies: CliDependencies
+): void => {
+  if (!options.verbose || options.quiet) {
+    return;
+  }
+
+  dependencies.writeOutput(
+    `Options: ${JSON.stringify(
+      {
+        columns: options.columns,
+        imageSize: options.imageSize,
+        limit: options.limit,
+        output: options.output,
+        format: options.format,
+        sort: options.sort,
+        excludeBots: options.excludeBots
+      },
+      null,
+      2
+    )}\n`
+  );
+};
+
+const writeSuccessResult = (
+  subject: string,
+  outputPath: string,
+  options: WallOptions,
+  dependencies: CliDependencies
+): void => {
+  if (!options.quiet) {
+    writeResult(subject, outputPath, dependencies);
+  }
+};
+
 export const createCli = (
   dependencies: CliDependencies = defaultDependencies
 ): Command => {
@@ -388,6 +448,7 @@ export const createCli = (
   followersCommand.action(
     async (username: string | undefined, rawOptions: WallOptions) => {
       const options = await resolveWallOptions(rawOptions);
+      writeVerbose(options, dependencies);
       const token = requireToken(options.githubToken);
 
       const headers = dependencies.createHeaders(token);
@@ -436,7 +497,12 @@ export const createCli = (
           `${JSON.stringify({ subject: `@${resolvedUsername}`, output: outputPath, dryRun: options.dryRun })}\n`
         );
       } else {
-        writeResult(`@${resolvedUsername}`, outputPath, dependencies);
+        writeSuccessResult(
+          `@${resolvedUsername}`,
+          outputPath,
+          options,
+          dependencies
+        );
       }
     }
   );
@@ -456,6 +522,7 @@ export const createCli = (
         ...(await resolveWallOptions(rawOptions)),
         includeBots: rawOptions.includeBots
       };
+      writeVerbose(options, dependencies);
       const token = requireToken(options.githubToken);
 
       const headers = dependencies.createHeaders(token);
@@ -488,7 +555,7 @@ export const createCli = (
           `${JSON.stringify({ subject: repository, output: outputPath, dryRun: options.dryRun })}\n`
         );
       } else {
-        writeResult(repository, outputPath, dependencies);
+        writeSuccessResult(repository, outputPath, options, dependencies);
       }
     }
   );
@@ -509,6 +576,7 @@ export const createCli = (
   sponsorsCommand.action(
     async (username: string | undefined, rawOptions: WallOptions) => {
       const options = await resolveWallOptions(rawOptions);
+      writeVerbose(options, dependencies);
       const token = requireToken(options.githubToken);
 
       const headers = dependencies.createHeaders(token);
@@ -545,7 +613,12 @@ export const createCli = (
           `${JSON.stringify({ subject: `@${resolvedUsername}`, output: outputPath, dryRun: options.dryRun })}\n`
         );
       } else {
-        writeResult(`@${resolvedUsername}`, outputPath, dependencies);
+        writeSuccessResult(
+          `@${resolvedUsername}`,
+          outputPath,
+          options,
+          dependencies
+        );
       }
     }
   );
@@ -562,6 +635,7 @@ export const createCli = (
     repositoryCommand.action(
       async (repository: string, rawOptions: WallOptions) => {
         const options = await resolveWallOptions(rawOptions);
+        writeVerbose(options, dependencies);
         const token = requireToken(options.githubToken);
         const headers = dependencies.createHeaders(token);
         const renderOptions = getRenderOptions(options);
@@ -587,7 +661,7 @@ export const createCli = (
             `${JSON.stringify({ subject: repository, source, output: outputPath, dryRun: options.dryRun })}\n`
           );
         } else {
-          writeResult(repository, outputPath, dependencies);
+          writeSuccessResult(repository, outputPath, options, dependencies);
         }
       }
     );
@@ -604,6 +678,7 @@ export const createCli = (
   membersCommand.action(
     async (organization: string, rawOptions: WallOptions) => {
       const options = await resolveWallOptions(rawOptions);
+      writeVerbose(options, dependencies);
       const token = requireToken(options.githubToken);
       const headers = dependencies.createHeaders(token);
 
@@ -628,7 +703,123 @@ export const createCli = (
           `${JSON.stringify({ subject: organization, source: 'members', output: outputPath, dryRun: options.dryRun })}\n`
         );
       } else {
-        writeResult(organization, outputPath, dependencies);
+        writeSuccessResult(organization, outputPath, options, dependencies);
+      }
+    }
+  );
+
+  const configInitCommand = program
+    .command('config')
+    .description('Manage community wall configuration')
+    .command('init')
+    .description('Create a starter .community-wall.json file')
+    .argument('[path]', 'Configuration file path', '.community-wall.json')
+    .option('--force', 'Overwrite an existing configuration file');
+
+  configInitCommand.action(
+    async (path: string, options: { force?: boolean | undefined }) => {
+      const outputPath = resolve(path);
+
+      if (!options.force) {
+        try {
+          await access(outputPath);
+          throw new Error(
+            `Configuration already exists at ${outputPath}; use --force to overwrite it`
+          );
+        } catch (error) {
+          if (
+            error instanceof Error
+            && !error.message.includes('ENOENT')
+            && !error.message.startsWith('Configuration already exists')
+          ) {
+            throw error;
+          }
+        }
+      }
+
+      await dependencies.makeDirectory(dirname(outputPath));
+      await dependencies.saveFile(
+        outputPath,
+        Buffer.from(DEFAULT_CONFIG_CONTENT)
+      );
+      dependencies.writeOutput(`Created configuration: ${outputPath}\n`);
+    }
+  );
+
+  const doctorCommand = program
+    .command('doctor')
+    .description('Validate token access and configuration')
+    .option(
+      '--config <path>',
+      'JSON configuration file',
+      '.community-wall.json'
+    )
+    .option(
+      '-t, --github-token <token>',
+      'GitHub personal access token',
+      process.env['GITHUB_TOKEN']
+    )
+    .option('--json', 'Print machine-readable output')
+    .option('--quiet', 'Suppress success output');
+
+  doctorCommand.action(
+    async (options: {
+      config: string;
+      githubToken?: string | undefined;
+      json?: boolean | undefined;
+      quiet?: boolean | undefined;
+    }) => {
+      const checks = {
+        config: 'ok' as 'ok' | 'error',
+        token: 'error' as 'ok' | 'error',
+        username: 'error' as 'ok' | 'error'
+      };
+      let errorMessage: string | undefined;
+
+      try {
+        await loadConfig(options.config);
+      } catch (error) {
+        checks.config = 'error';
+        errorMessage =
+          error instanceof Error ? error.message : 'Invalid configuration';
+      }
+
+      if (options.githubToken) {
+        checks.token = 'ok';
+        try {
+          await dependencies.fetchUsername(
+            dependencies.createHeaders(options.githubToken)
+          );
+          checks.username = 'ok';
+        } catch (error) {
+          errorMessage =
+            error instanceof Error
+              ? error.message
+              : 'GitHub authentication failed';
+        }
+      } else {
+        errorMessage =
+          'Missing GitHub token. Set GITHUB_TOKEN or use --github-token.';
+      }
+
+      const result = {
+        ok: Object.values(checks).every((status) => status === 'ok'),
+        checks,
+        ...(errorMessage ? { error: errorMessage } : {})
+      };
+
+      if (options.json) {
+        dependencies.writeOutput(`${JSON.stringify(result)}\n`);
+      } else if (!options.quiet || !result.ok) {
+        dependencies.writeOutput(
+          `${result.ok ? 'OK' : 'ERROR'}: ${JSON.stringify(result.checks)}${
+            errorMessage ? `\n${errorMessage}` : ''
+          }\n`
+        );
+      }
+
+      if (!result.ok) {
+        throw new Error(errorMessage ?? 'Doctor checks failed');
       }
     }
   );

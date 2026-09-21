@@ -302,4 +302,43 @@ describe('GitHub Community Wall CLI', () => {
 
     expect(dependencies.generateFollowersGraph).not.toHaveBeenCalled();
   });
+
+  it('supports quiet output and config init', async () => {
+    const dependencies = createDependencies();
+    const cli = createCli(dependencies);
+
+    await cli.parseAsync(['config', 'init', 'tmp/community-wall.json'], {
+      from: 'user'
+    });
+
+    expect(dependencies.makeDirectory).toHaveBeenCalledWith(resolve('tmp'));
+    expect(dependencies.saveFile).toHaveBeenCalledWith(
+      resolve('tmp/community-wall.json'),
+      expect.any(Buffer)
+    );
+
+    await cli.parseAsync(
+      ['sponsors', 'ale0aranda', '--github-token', 'test-token', '--quiet'],
+      { from: 'user' }
+    );
+
+    expect(dependencies.writeOutput).not.toHaveBeenCalledWith(
+      'Community wall generated for @ale0aranda\n'
+    );
+  });
+
+  it('runs doctor checks without exposing the token', async () => {
+    const dependencies = createDependencies();
+    const cli = createCli(dependencies);
+
+    await cli.parseAsync(['doctor', '--github-token', 'test-token', '--json'], {
+      from: 'user'
+    });
+
+    expect(dependencies.createHeaders).toHaveBeenCalledWith('test-token');
+    expect(dependencies.fetchUsername).toHaveBeenCalledOnce();
+    expect(dependencies.writeOutput).toHaveBeenCalledWith(
+      '{"ok":true,"checks":{"config":"ok","token":"ok","username":"ok"}}\n'
+    );
+  });
 });

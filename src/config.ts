@@ -24,6 +24,8 @@ export interface WallConfig extends Optional<AvatarGridOptions> {
   twitterBanner?: boolean | undefined;
   dryRun?: boolean | undefined;
   json?: boolean | undefined;
+  quiet?: boolean | undefined;
+  verbose?: boolean | undefined;
 }
 
 const DEFAULT_CONFIG = '.community-wall.json';
