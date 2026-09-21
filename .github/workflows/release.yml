@@ -50,3 +50,28 @@ jobs:
           commit: "📦 chore(release): version package"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync GitHub release with package version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="$(node -p "require('./package.json').version")"
+          tag="v${version}"
+
+          if ! git rev-parse "$tag" >/dev/null 2>&1; then
+            git tag "$tag"
+          fi
+
+          if ! git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
+            git push origin "$tag"
+          fi
+
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" \
+              --verify-tag \
+              --title "GitHub Community Wall ${tag}" \
+              --generate-notes
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
