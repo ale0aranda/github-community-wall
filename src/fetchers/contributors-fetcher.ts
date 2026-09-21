@@ -118,12 +118,21 @@ export const generateContributorsWall = async (
 
   validateAvatarGridOptions(renderOptions);
 
-  const contributors = await fetchContributors(
+  let contributors = await fetchContributors(
     repository,
     headers,
     limit,
-    includeBots
+    options?.excludeBots === undefined ? includeBots : !options.excludeBots
   );
+  if (options?.sort === 'login') {
+    contributors = [...contributors].sort((a, b) =>
+      a.login.localeCompare(b.login)
+    );
+  } else if (options?.sort === 'contributions') {
+    contributors = [...contributors].sort(
+      (a, b) => b.contributions - a.contributions
+    );
+  }
 
   return renderAvatarGrid(
     contributors.map((contributor) => contributor.avatarUrl),

@@ -10,7 +10,9 @@ export interface AvatarGridOptions {
   shape?: 'square' | 'circle' | undefined;
   title?: string | undefined;
   subtitle?: string | undefined;
-  format?: 'png' | 'webp' | 'svg' | undefined;
+  format?: 'png' | 'jpeg' | 'webp' | 'svg' | 'html' | 'json' | undefined;
+  excludeBots?: boolean | undefined;
+  sort?: 'login' | 'contributions' | 'none' | undefined;
 }
 
 export interface TwitterBannerOptions {
@@ -18,7 +20,7 @@ export interface TwitterBannerOptions {
   background?: string | undefined;
   gap?: number | undefined;
   shape?: 'square' | 'circle' | undefined;
-  format?: 'png' | 'webp' | 'svg' | undefined;
+  format?: 'png' | 'jpeg' | 'webp' | 'svg' | undefined;
 }
 
 export const validateAvatarGridOptions = (options: AvatarGridOptions): void => {
@@ -91,6 +93,30 @@ const renderSvg = (
   );
 };
 
+const renderHtml = (
+  avatarUrls: string[],
+  options: Pick<
+    AvatarGridOptions,
+    'background' | 'gap' | 'shape' | 'title' | 'subtitle'
+  >
+): Buffer => {
+  const gap = options.gap ?? 0;
+  const radius = options.shape === 'circle' ? '50%' : '0';
+  const images = avatarUrls
+    .map(
+      (url) =>
+        `<img src="${escapeXml(url)}" alt="" loading="lazy" style="width:64px;height:64px;object-fit:cover;border-radius:${radius};margin:${gap / 2}px">`
+    )
+    .join('');
+  const title = options.title ? `<h1>${escapeXml(options.title)}</h1>` : '';
+  const subtitle = options.subtitle
+    ? `<p>${escapeXml(options.subtitle)}</p>`
+    : '';
+  return Buffer.from(
+    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeXml(options.title ?? 'Community wall')}</title><style>body{margin:0;padding:24px;background:${escapeXml(options.background ?? 'transparent')};font-family:system-ui,sans-serif;color:white}main{display:flex;flex-wrap:wrap;align-items:center;justify-content:center}h1,p{text-align:center}</style></head><body>${title}${subtitle}<main>${images}</main></body></html>`
+  );
+};
+
 const drawImage = (
   context: SKRSContext2D,
   image: Parameters<typeof context.drawImage>[0],
@@ -122,7 +148,9 @@ const toBuffer = (
 ): Buffer =>
   format === 'webp'
     ? canvas.toBuffer('image/webp')
-    : canvas.toBuffer('image/png');
+    : format === 'jpeg'
+      ? canvas.toBuffer('image/jpeg')
+      : canvas.toBuffer('image/png');
 
 export const renderAvatarGrid = async (
   avatarUrls: string[],
@@ -133,6 +161,24 @@ export const renderAvatarGrid = async (
   const { columns, imageSize } = options;
   const gap = options.gap ?? 0;
   const shape = options.shape ?? 'square';
+
+  if (options.format === 'html') {
+    return renderHtml(avatarUrls, options);
+  }
+  if (options.format === 'json') {
+    return Buffer.from(
+      `${JSON.stringify(
+        {
+          count: avatarUrls.length,
+          avatars: avatarUrls,
+          layout: { columns, imageSize, gap, shape }
+        },
+        null,
+        2
+      )}\n`
+    );
+  }
+
   const images = await fetchImages(avatarUrls, imageSize);
   const width = imageSize * columns + gap * Math.max(0, columns - 1);
   const rowCount = Math.max(1, Math.ceil(images.length / columns));

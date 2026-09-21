@@ -30,7 +30,7 @@ interface WallOptions {
   background?: string | undefined;
   config?: string | undefined;
   dryRun?: boolean | undefined;
-  format?: 'png' | 'webp' | 'svg' | undefined;
+  format?: 'png' | 'jpeg' | 'webp' | 'svg' | 'html' | 'json' | undefined;
   gap?: number | undefined;
   githubToken?: string | undefined;
   imageSize: number;
@@ -41,6 +41,8 @@ interface WallOptions {
   subtitle?: string | undefined;
   title?: string | undefined;
   twitterBanner?: boolean | undefined;
+  excludeBots?: boolean | undefined;
+  sort?: 'login' | 'contributions' | 'none' | undefined;
 }
 
 interface ContributorsOptions extends WallOptions {
@@ -206,9 +208,14 @@ const addWallOptions = (command: Command, limitDescription: string): Command =>
     .option('--background <color>', 'Background color')
     .option('--gap <pixels>', 'Space between avatars', parseNonNegativeInteger)
     .option('--shape <shape>', 'Avatar shape (square or circle)')
-    .option('--format <format>', 'Output format (png, webp, or svg)')
+    .option(
+      '--format <format>',
+      'Output format (png, jpeg, webp, svg, html, or json)'
+    )
     .option('--title <text>', 'Optional title')
     .option('--subtitle <text>', 'Optional subtitle')
+    .option('--exclude-bots', 'Exclude bot accounts where available')
+    .option('--sort <field>', 'Sort by login or contributions')
     .option(
       '--dry-run',
       'Fetch data and print the result without writing an image'
@@ -222,18 +229,39 @@ const resolveWallOptions = async (
   const merged = mergeConfig(config, options);
   const output = merged.output ?? OUTPUT_FILE;
   const extensionFormat = extname(output).slice(1).toLowerCase();
-  const inferredFormat =
-    extensionFormat === 'svg' || extensionFormat === 'webp'
-      ? extensionFormat
-      : 'png';
+  const inferredFormat = [
+    'jpg',
+    'jpeg',
+    'svg',
+    'webp',
+    'html',
+    'json'
+  ].includes(extensionFormat)
+    ? extensionFormat === 'jpg'
+      ? 'jpeg'
+      : extensionFormat
+    : 'png';
   const format = merged.format ?? inferredFormat;
 
-  if (format !== 'png' && format !== 'webp' && format !== 'svg') {
-    throw new InvalidArgumentError('Format must be png, webp, or svg');
+  if (!['png', 'jpeg', 'webp', 'svg', 'html', 'json'].includes(format)) {
+    throw new InvalidArgumentError(
+      'Format must be png, jpeg, webp, svg, html, or json'
+    );
   }
 
   if (merged.shape && merged.shape !== 'square' && merged.shape !== 'circle') {
     throw new InvalidArgumentError('Shape must be square or circle');
+  }
+
+  if (
+    merged.sort
+    && merged.sort !== 'login'
+    && merged.sort !== 'contributions'
+    && merged.sort !== 'none'
+  ) {
+    throw new InvalidArgumentError(
+      'Sort must be login, contributions, or none'
+    );
   }
 
   return {
@@ -245,13 +273,15 @@ const resolveWallOptions = async (
     background: merged.background,
     config: options.config,
     dryRun: merged.dryRun,
-    format,
+    format: format as WallOptions['format'],
     gap: merged.gap,
     json: merged.json,
     shape: merged.shape,
     subtitle: merged.subtitle,
     title: merged.title,
-    twitterBanner: merged.twitterBanner
+    twitterBanner: merged.twitterBanner,
+    excludeBots: merged.excludeBots,
+    sort: merged.sort
   };
 };
 
@@ -263,7 +293,9 @@ const getRenderOptions = (options: WallOptions): AvatarGridOptions => ({
   shape: options.shape,
   title: options.title,
   subtitle: options.subtitle,
-  format: options.format
+  format: options.format,
+  excludeBots: options.excludeBots,
+  sort: options.sort
 });
 
 const hasCustomRenderOptions = (options: WallOptions): boolean =>
@@ -273,6 +305,8 @@ const hasCustomRenderOptions = (options: WallOptions): boolean =>
       || options.shape
       || options.title
       || options.subtitle
+      || options.sort
+      || options.excludeBots !== undefined
       || (options.format && options.format !== 'png')
   );
 

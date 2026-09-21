@@ -78,105 +78,138 @@ describe('validateAvatarGridOptions', () => {
       })
     ).not.toThrow();
   });
-});
 
-describe('renderAvatarGrid', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+  describe('renderAvatarGrid', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
 
-  it('renders a square PNG grid', async () => {
-    const images = [{ id: 1 }, { id: 2 }, { id: 3 }] as unknown as Awaited<
-      ReturnType<typeof fetchImages>
-    >;
+    it('renders a square PNG grid', async () => {
+      const images = [{ id: 1 }, { id: 2 }, { id: 3 }] as unknown as Awaited<
+        ReturnType<typeof fetchImages>
+      >;
 
-    vi.mocked(fetchImages).mockResolvedValue(images);
+      vi.mocked(fetchImages).mockResolvedValue(images);
 
-    const result = await renderAvatarGrid(
-      ['avatar-1', 'avatar-2', 'avatar-3'],
-      {
+      const result = await renderAvatarGrid(
+        ['avatar-1', 'avatar-2', 'avatar-3'],
+        {
+          imageSize: 64,
+          columns: 2,
+          gap: 4,
+          background: '#ffffff'
+        }
+      );
+
+      expect(fetchImages).toHaveBeenCalledWith(
+        ['avatar-1', 'avatar-2', 'avatar-3'],
+        64
+      );
+
+      expect(createCanvas).toHaveBeenCalledWith(132, 132);
+
+      expect(canvasMocks.fillRect).toHaveBeenCalledWith(0, 0, 132, 132);
+
+      expect(canvasMocks.drawImage).toHaveBeenNthCalledWith(
+        1,
+        images[0],
+        0,
+        0,
+        64,
+        64
+      );
+
+      expect(canvasMocks.drawImage).toHaveBeenNthCalledWith(
+        2,
+        images[1],
+        68,
+        0,
+        64,
+        64
+      );
+
+      expect(canvasMocks.drawImage).toHaveBeenNthCalledWith(
+        3,
+        images[2],
+        0,
+        68,
+        64,
+        64
+      );
+
+      expect(canvasMocks.toBuffer).toHaveBeenCalledWith('image/png');
+      expect(result).toEqual(Buffer.from('canvas'));
+    });
+
+    it('clips circular avatars', async () => {
+      const image = { id: 1 } as unknown as Awaited<
+        ReturnType<typeof fetchImages>
+      >[number];
+
+      vi.mocked(fetchImages).mockResolvedValue([image]);
+
+      await renderAvatarGrid(['avatar-1'], {
         imageSize: 64,
-        columns: 2,
-        gap: 4,
-        background: '#ffffff'
-      }
-    );
+        columns: 1,
+        shape: 'circle'
+      });
 
-    expect(fetchImages).toHaveBeenCalledWith(
-      ['avatar-1', 'avatar-2', 'avatar-3'],
-      64
-    );
-
-    expect(createCanvas).toHaveBeenCalledWith(132, 132);
-
-    expect(canvasMocks.fillRect).toHaveBeenCalledWith(0, 0, 132, 132);
-
-    expect(canvasMocks.drawImage).toHaveBeenNthCalledWith(
-      1,
-      images[0],
-      0,
-      0,
-      64,
-      64
-    );
-
-    expect(canvasMocks.drawImage).toHaveBeenNthCalledWith(
-      2,
-      images[1],
-      68,
-      0,
-      64,
-      64
-    );
-
-    expect(canvasMocks.drawImage).toHaveBeenNthCalledWith(
-      3,
-      images[2],
-      0,
-      68,
-      64,
-      64
-    );
-
-    expect(canvasMocks.toBuffer).toHaveBeenCalledWith('image/png');
-    expect(result).toEqual(Buffer.from('canvas'));
-  });
-
-  it('clips circular avatars', async () => {
-    const image = { id: 1 } as unknown as Awaited<
-      ReturnType<typeof fetchImages>
-    >[number];
-
-    vi.mocked(fetchImages).mockResolvedValue([image]);
-
-    await renderAvatarGrid(['avatar-1'], {
-      imageSize: 64,
-      columns: 1,
-      shape: 'circle'
+      expect(canvasMocks.save).toHaveBeenCalledOnce();
+      expect(canvasMocks.beginPath).toHaveBeenCalledOnce();
+      expect(canvasMocks.arc).toHaveBeenCalledWith(32, 32, 32, 0, Math.PI * 2);
+      expect(canvasMocks.clip).toHaveBeenCalledOnce();
+      expect(canvasMocks.drawImage).toHaveBeenCalledWith(image, 0, 0, 64, 64);
+      expect(canvasMocks.restore).toHaveBeenCalledOnce();
     });
 
-    expect(canvasMocks.save).toHaveBeenCalledOnce();
-    expect(canvasMocks.beginPath).toHaveBeenCalledOnce();
-    expect(canvasMocks.arc).toHaveBeenCalledWith(32, 32, 32, 0, Math.PI * 2);
-    expect(canvasMocks.clip).toHaveBeenCalledOnce();
-    expect(canvasMocks.drawImage).toHaveBeenCalledWith(image, 0, 0, 64, 64);
-    expect(canvasMocks.restore).toHaveBeenCalledOnce();
-  });
+    it('renders WebP output', async () => {
+      vi.mocked(fetchImages).mockResolvedValue([{ id: 1 }] as never);
 
-  it('renders WebP output', async () => {
-    vi.mocked(fetchImages).mockResolvedValue([{ id: 1 }] as never);
-
-    await renderAvatarGrid(['avatar-1'], {
-      imageSize: 64,
-      columns: 1,
-      format: 'webp'
+      await renderAvatarGrid(['avatar-1'], {
+        imageSize: 64,
+        columns: 1,
+        format: 'webp'
+      });
+      expect(canvasMocks.toBuffer).toHaveBeenCalledWith('image/webp');
     });
 
-    expect(canvasMocks.toBuffer).toHaveBeenCalledWith('image/webp');
+    it('renders JPEG output', async () => {
+      vi.mocked(fetchImages).mockResolvedValue([{ id: 1 }] as never);
+
+      await renderAvatarGrid(['avatar-1'], {
+        imageSize: 64,
+        columns: 1,
+        format: 'jpeg'
+      });
+
+      expect(canvasMocks.toBuffer).toHaveBeenCalledWith('image/jpeg');
+    });
+
+    it('renders standalone HTML and JSON metadata without fetching images', async () => {
+      const html = await renderAvatarGrid(['https://example.com/avatar.png'], {
+        imageSize: 64,
+        columns: 1,
+        format: 'html',
+        title: 'Community'
+      });
+      expect(html.toString()).toContain('<!doctype html>');
+      expect(html.toString()).toContain('https://example.com/avatar.png');
+      expect(fetchImages).not.toHaveBeenCalled();
+
+      const metadata = await renderAvatarGrid(['avatar-1'], {
+        imageSize: 64,
+        columns: 1,
+        format: 'json'
+      });
+      expect(JSON.parse(metadata.toString())).toMatchObject({
+        count: 1,
+        avatars: ['avatar-1']
+      });
+    });
   });
 
   it('renders an empty grid without drawing images', async () => {

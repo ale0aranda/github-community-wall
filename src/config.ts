@@ -7,7 +7,7 @@ type Optional<T> = {
 };
 
 export interface WallConfig extends Optional<AvatarGridOptions> {
-  format?: 'png' | 'webp' | 'svg' | undefined;
+  format?: 'png' | 'jpeg' | 'webp' | 'svg' | 'html' | 'json' | undefined;
   shape?: 'square' | 'circle' | undefined;
   background?: string | undefined;
   gap?: number | undefined;
@@ -19,6 +19,8 @@ export interface WallConfig extends Optional<AvatarGridOptions> {
   limit?: number | undefined;
   output?: string | undefined;
   includeBots?: boolean | undefined;
+  excludeBots?: boolean | undefined;
+  sort?: 'login' | 'contributions' | 'none' | undefined;
   twitterBanner?: boolean | undefined;
   dryRun?: boolean | undefined;
   json?: boolean | undefined;

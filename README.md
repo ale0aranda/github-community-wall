@@ -38,6 +38,7 @@ github-community-wall followers --output assets/followers.png
 
 # Contributors, excluding bots by default
 github-community-wall contributors owner/repository --limit 100
+github-community-wall contributors owner/repository --exclude-bots --sort contributions
 
 # Public active sponsors
 github-community-wall sponsors owner --background "#0d1117"
@@ -68,7 +69,10 @@ Commands can read defaults from `.community-wall.json` in the current directory:
   "background": "#0d1117",
   "gap": 2,
   "shape": "circle",
-  "output": "assets/community-wall.png"
+  "output": "assets/community-wall.png",
+  "format": "png",
+  "excludeBots": true,
+  "sort": "login"
 }
 ```
 
@@ -114,8 +118,13 @@ const png = await renderAvatarGrid(avatars, {
 ## Output
 
 PNG is the default output format. The output format can also be selected with
-`--format png|svg|webp`, and is inferred from `.png`, `.svg`, or `.webp` output
-paths when `--format` is omitted.
+`--format png|jpeg|webp|svg|html|json` (or inferred from `.png`, `.jpg`,
+`.jpeg`, `.svg`, `.webp`, `.html`, or `.json` output paths). HTML is a
+standalone document containing the avatar grid; JSON contains avatar metadata
+and layout information. Use `--exclude-bots`, `--sort login|contributions`,
+and `--limit` to control the input where GitHub provides the relevant metadata.
+Contributors exclude bots by default, and sources always omit users without an
+avatar URL.
 
 The renderer supports configurable backgrounds, gaps, circular or square
 avatars, titles, and subtitles. `--dry-run --json` can be used to inspect the

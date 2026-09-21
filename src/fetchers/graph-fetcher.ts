@@ -132,7 +132,10 @@ export const generateGraph = async (
       background: options?.background,
       gap: options?.gap,
       shape: options?.shape,
-      format: options?.format
+      format:
+        options?.format === 'html' || options?.format === 'json'
+          ? 'png'
+          : options?.format
     });
   }
 
