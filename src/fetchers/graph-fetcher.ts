@@ -1,3 +1,4 @@
+import { cachedFetch } from '../cache.js';
 import { TWITTER_BANNER_LIMIT } from '../const.js';
 import {
   assertGitHubResponse,
@@ -36,7 +37,7 @@ export const fetchGraphQL = async (
     }
   `;
 
-  const response = await fetch('https://api.github.com/graphql', {
+  const response = await cachedFetch('https://api.github.com/graphql', {
     headers,
     method: 'POST',
     body: JSON.stringify({
@@ -135,7 +136,9 @@ export const generateGraph = async (
       format:
         options?.format === 'html' || options?.format === 'json'
           ? 'png'
-          : options?.format
+          : options?.format,
+      theme: options?.theme,
+      watermark: options?.watermark
     });
   }
 

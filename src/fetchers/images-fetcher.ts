@@ -1,5 +1,7 @@
 import { type Image, loadImage } from '@napi-rs/canvas';
 
+import { cachedFetch } from '../cache.js';
+
 export interface ImageFetchWarning {
   url: string;
   error: unknown;
@@ -48,7 +50,7 @@ export const fetchImages = async (
       const timeoutId = setTimeout(() => controller.abort(), timeout);
 
       try {
-        const res = await fetch(imageUrl, { signal: controller.signal });
+        const res = await cachedFetch(imageUrl, { signal: controller.signal });
         if (!res.ok) {
           throw new Error(`Image request failed with status ${res.status}`);
         }

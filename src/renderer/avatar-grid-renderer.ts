@@ -13,6 +13,8 @@ export interface AvatarGridOptions {
   format?: 'png' | 'jpeg' | 'webp' | 'svg' | 'html' | 'json' | undefined;
   excludeBots?: boolean | undefined;
   sort?: 'login' | 'contributions' | 'none' | undefined;
+  theme?: 'github-dark' | 'github-light' | 'neon' | 'minimal' | undefined;
+  watermark?: string | undefined;
 }
 
 export interface TwitterBannerOptions {
@@ -21,6 +23,8 @@ export interface TwitterBannerOptions {
   gap?: number | undefined;
   shape?: 'square' | 'circle' | undefined;
   format?: 'png' | 'jpeg' | 'webp' | 'svg' | undefined;
+  theme?: AvatarGridOptions['theme'];
+  watermark?: string | undefined;
 }
 
 export const validateAvatarGridOptions = (options: AvatarGridOptions): void => {
@@ -50,6 +54,17 @@ const escapeXml = (value: string): string =>
       })[character] ?? character
   );
 
+const getTheme = (
+  theme: AvatarGridOptions['theme']
+): { background: string; foreground: string } =>
+  ({
+    'github-light': { background: '#f6f8fa', foreground: '#24292f' },
+    neon: { background: '#090014', foreground: '#f0abfc' },
+    minimal: { background: '#ffffff', foreground: '#111827' },
+    'github-dark': { background: '#0d1117', foreground: '#f0f6fc' },
+    undefined: { background: 'transparent', foreground: '#ffffff' }
+  })[theme ?? 'undefined'];
+
 const renderSvg = (
   avatarUrls: string[],
   width: number,
@@ -59,11 +74,17 @@ const renderSvg = (
   cellHeight: number,
   options: Pick<
     AvatarGridOptions,
-    'background' | 'gap' | 'shape' | 'title' | 'subtitle'
+    | 'background'
+    | 'gap'
+    | 'shape'
+    | 'title'
+    | 'subtitle'
+    | 'theme'
+    | 'watermark'
   >
 ): Buffer => {
   const gap = options.gap ?? 0;
-  const background = options.background ?? 'transparent';
+  const background = options.background ?? getTheme(options.theme).background;
   const radius = options.shape === 'circle' ? '50%' : '0';
   const cells = avatarUrls
     .map((url, index) => {
@@ -85,6 +106,9 @@ const renderSvg = (
       : '',
     options.subtitle
       ? `<text x="${width / 2}" y="44" text-anchor="middle" fill="white" font-family="sans-serif" font-size="12">${escapeXml(options.subtitle)}</text>`
+      : '',
+    options.watermark
+      ? `<text x="${width - 12}" y="${height - 10}" text-anchor="end" fill="${getTheme(options.theme).foreground}" opacity="0.7" font-family="sans-serif" font-size="11">${escapeXml(options.watermark)}</text>`
       : ''
   ].join('');
 
@@ -97,7 +121,13 @@ const renderHtml = (
   avatarUrls: string[],
   options: Pick<
     AvatarGridOptions,
-    'background' | 'gap' | 'shape' | 'title' | 'subtitle'
+    | 'background'
+    | 'gap'
+    | 'shape'
+    | 'title'
+    | 'subtitle'
+    | 'theme'
+    | 'watermark'
   >
 ): Buffer => {
   const gap = options.gap ?? 0;
@@ -113,7 +143,7 @@ const renderHtml = (
     ? `<p>${escapeXml(options.subtitle)}</p>`
     : '';
   return Buffer.from(
-    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeXml(options.title ?? 'Community wall')}</title><style>body{margin:0;padding:24px;background:${escapeXml(options.background ?? 'transparent')};font-family:system-ui,sans-serif;color:white}main{display:flex;flex-wrap:wrap;align-items:center;justify-content:center}h1,p{text-align:center}</style></head><body>${title}${subtitle}<main>${images}</main></body></html>`
+    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeXml(options.title ?? 'Community wall')}</title><style>body{margin:0;padding:24px;background:${escapeXml(options.background ?? getTheme(options.theme).background)};font-family:system-ui,sans-serif;color:${getTheme(options.theme).foreground}}main{display:flex;flex-wrap:wrap;align-items:center;justify-content:center}h1,p{text-align:center}.watermark{text-align:right;opacity:.7;font-size:11px}</style></head><body>${title}${subtitle}<main>${images}</main>${options.watermark ? `<div class="watermark">${escapeXml(options.watermark)}</div>` : ''}</body></html>`
   );
 };
 
@@ -198,7 +228,8 @@ export const renderAvatarGrid = async (
 
   const canvas = createCanvas(width, height);
   const context = canvas.getContext('2d');
-  context['fillStyle'] = options.background ?? 'transparent';
+  context['fillStyle'] =
+    options.background ?? getTheme(options.theme).background;
   context['fillRect'](0, 0, width, height);
 
   images.forEach((image, index) => {
@@ -233,7 +264,9 @@ export const renderTwitterBanner = async (
   const images = await fetchImages(avatarUrls, options.imageSize);
   const width = 1500;
   const height = 500;
-  const background = options.background ?? '#0d1117';
+  const background =
+    options.background
+    ?? (options.theme ? getTheme(options.theme).background : '#0d1117');
   const shape = options.shape ?? 'square';
   const columns = Math.max(
     1,
@@ -263,6 +296,13 @@ export const renderTwitterBanner = async (
       shape
     );
   });
+
+  if (options.watermark) {
+    context['fillStyle'] = getTheme(options.theme).foreground;
+    context['font'] = '16px sans-serif';
+    context['textAlign'] = 'right';
+    context['fillText'](options.watermark, width - 16, height - 12);
+  }
 
   if (options.format === 'svg') {
     return renderSvg(

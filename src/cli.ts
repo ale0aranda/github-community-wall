@@ -1,12 +1,14 @@
 import {
   access,
   mkdir as mkdirFileSystem,
+  readFile as readFileSystem,
   writeFile as writeFileSystem
 } from 'node:fs/promises';
-import { dirname, extname, resolve } from 'node:path';
+import { dirname, extname, relative, resolve } from 'node:path';
 
 import { Command, InvalidArgumentError } from 'commander';
 
+import { configureCache } from './cache.js';
 import { loadConfig, mergeConfig } from './config.js';
 import {
   COLUMNS,
@@ -46,6 +48,13 @@ interface WallOptions {
   sort?: 'login' | 'contributions' | 'none' | undefined;
   quiet?: boolean | undefined;
   verbose?: boolean | undefined;
+  cacheDir?: string | undefined;
+  cacheTtl?: number | undefined;
+  noCache?: boolean | undefined;
+  refresh?: boolean | undefined;
+  offline?: boolean | undefined;
+  theme?: AvatarGridOptions['theme'];
+  watermark?: string | undefined;
 }
 
 interface ContributorsOptions extends WallOptions {
@@ -201,6 +210,12 @@ const parseNonNegativeInteger = (value: string): number => {
   return parsedValue;
 };
 
+const relativePath = (fromFile: string, targetFile: string): string =>
+  relative(dirname(fromFile), targetFile).replaceAll('\\', '/');
+
+const escapeRegExp = (value: string): string =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const addWallOptions = (command: Command, limitDescription: string): Command =>
   command
     .option(
@@ -238,6 +253,20 @@ const addWallOptions = (command: Command, limitDescription: string): Command =>
     .option('--sort <field>', 'Sort by login or contributions')
     .option('--quiet', 'Suppress success output')
     .option('--verbose', 'Print resolved options and progress details')
+    .option('--cache-dir <path>', 'Local cache directory')
+    .option(
+      '--cache-ttl <seconds>',
+      'Cache lifetime in seconds',
+      parsePositiveInteger
+    )
+    .option('--no-cache', 'Disable local caching')
+    .option('--refresh', 'Ignore cached responses and fetch fresh data')
+    .option('--offline', 'Use only cached responses')
+    .option(
+      '--theme <theme>',
+      'Visual theme (github-dark, github-light, neon, minimal)'
+    )
+    .option('--watermark <text>', 'Small branding text in the output')
     .option(
       '--dry-run',
       'Fetch data and print the result without writing an image'
@@ -264,6 +293,13 @@ const resolveWallOptions = async (
       : extensionFormat
     : 'png';
   const format = merged.format ?? inferredFormat;
+  configureCache({
+    ...(merged.cacheDir ? { directory: merged.cacheDir } : {}),
+    ...(merged.cacheTtl ? { ttl: merged.cacheTtl } : {}),
+    enabled: merged.noCache !== true,
+    ...(merged.refresh !== undefined ? { refresh: merged.refresh } : {}),
+    ...(merged.offline !== undefined ? { offline: merged.offline } : {})
+  });
 
   if (!['png', 'jpeg', 'webp', 'svg', 'html', 'json'].includes(format)) {
     throw new InvalidArgumentError(
@@ -286,6 +322,17 @@ const resolveWallOptions = async (
     );
   }
 
+  if (
+    merged.theme
+    && !['github-dark', 'github-light', 'neon', 'minimal'].includes(
+      merged.theme
+    )
+  ) {
+    throw new InvalidArgumentError(
+      'Theme must be github-dark, github-light, neon, or minimal'
+    );
+  }
+
   return {
     columns: merged.columns ?? COLUMNS,
     githubToken: merged.githubToken ?? process.env['GITHUB_TOKEN'],
@@ -305,7 +352,14 @@ const resolveWallOptions = async (
     excludeBots: merged.excludeBots,
     sort: merged.sort,
     quiet: merged.quiet,
-    verbose: merged.verbose
+    verbose: merged.verbose,
+    cacheDir: merged.cacheDir,
+    cacheTtl: merged.cacheTtl,
+    noCache: merged.noCache,
+    refresh: merged.refresh,
+    offline: merged.offline,
+    theme: merged.theme,
+    watermark: merged.watermark
   };
 };
 
@@ -319,7 +373,9 @@ const getRenderOptions = (options: WallOptions): AvatarGridOptions => ({
   subtitle: options.subtitle,
   format: options.format,
   excludeBots: options.excludeBots,
-  sort: options.sort
+  sort: options.sort,
+  theme: options.theme,
+  watermark: options.watermark
 });
 
 const hasCustomRenderOptions = (options: WallOptions): boolean =>
@@ -331,6 +387,8 @@ const hasCustomRenderOptions = (options: WallOptions): boolean =>
       || options.subtitle
       || options.sort
       || options.excludeBots !== undefined
+      || options.theme
+      || options.watermark
       || (options.format && options.format !== 'png')
   );
 
@@ -705,6 +763,130 @@ export const createCli = (
       } else {
         writeSuccessResult(organization, outputPath, options, dependencies);
       }
+    }
+  );
+
+  const readmeCommand = addWallOptions(
+    program
+      .command('readme')
+      .description('Generate a wall and update README markers')
+      .argument(
+        '<source>',
+        'Source: followers, contributors, sponsors, stargazers, watchers, or members'
+      )
+      .argument('[subject]', 'Username, repository, or organization')
+      .option('--readme-path <path>', 'README file to update', 'README.md'),
+    'Maximum number of community members'
+  );
+
+  readmeCommand.action(
+    async (
+      source: string,
+      subject: string | undefined,
+      rawOptions: WallOptions & { readmePath: string }
+    ) => {
+      const allowedSources = [
+        'followers',
+        'contributors',
+        'sponsors',
+        'stargazers',
+        'watchers',
+        'members'
+      ];
+      if (!allowedSources.includes(source)) {
+        throw new InvalidArgumentError(
+          `Source must be one of: ${allowedSources.join(', ')}`
+        );
+      }
+
+      const options = await resolveWallOptions(rawOptions);
+      writeVerbose(options, dependencies);
+      const token = requireToken(options.githubToken);
+      const headers = dependencies.createHeaders(token);
+      const renderOptions = getRenderOptions(options);
+      const resolvedSubject =
+        source === 'followers' || source === 'sponsors'
+          ? await resolveUsername(subject, headers, dependencies)
+          : subject;
+
+      if (!resolvedSubject) {
+        throw new InvalidArgumentError(
+          `${source} requires a username, repository, or organization`
+        );
+      }
+
+      let graph: Buffer;
+      if (source === 'followers') {
+        graph = await dependencies.generateFollowersGraph(
+          resolvedSubject,
+          options.imageSize,
+          options.columns,
+          headers,
+          options.limit,
+          false,
+          renderOptions
+        );
+      } else if (source === 'sponsors') {
+        graph = await dependencies.generateSponsorsGraph(
+          resolvedSubject,
+          options.imageSize,
+          options.columns,
+          headers,
+          options.limit,
+          renderOptions
+        );
+      } else if (source === 'contributors') {
+        graph = await dependencies.generateContributorsGraph(
+          resolvedSubject,
+          options.imageSize,
+          options.columns,
+          headers,
+          options.limit,
+          false,
+          renderOptions
+        );
+      } else if (source === 'members') {
+        if (!dependencies.generateOrganizationMembersGraph) {
+          throw new Error('The members source is not configured');
+        }
+        graph = await dependencies.generateOrganizationMembersGraph(
+          resolvedSubject,
+          options.imageSize,
+          options.columns,
+          headers,
+          options.limit,
+          renderOptions
+        );
+      } else {
+        if (!dependencies.generateRepositoryUsersGraph) {
+          throw new Error(`The ${source} source is not configured`);
+        }
+        graph = await dependencies.generateRepositoryUsersGraph(
+          resolvedSubject,
+          source as 'stargazers' | 'watchers',
+          options.imageSize,
+          options.columns,
+          headers,
+          options.limit,
+          renderOptions
+        );
+      }
+
+      const outputPath = await saveGraph(graph, options.output, dependencies);
+      const readmePath = resolve(rawOptions.readmePath);
+      const readme = await readFileSystem(readmePath, 'utf8');
+      const markerStart = '<!-- community-wall:start -->';
+      const markerEnd = '<!-- community-wall:end -->';
+      const relativeOutput = `./${relativePath(readmePath, outputPath)}`;
+      const block = `${markerStart}\n![Community wall](${relativeOutput})\n${markerEnd}`;
+      const markerPattern = new RegExp(
+        `${escapeRegExp(markerStart)}[\\s\\S]*?${escapeRegExp(markerEnd)}`
+      );
+      const updatedReadme = markerPattern.test(readme)
+        ? readme.replace(markerPattern, block)
+        : `${readme.trimEnd()}\n\n${block}\n`;
+      await writeFileSystem(readmePath, updatedReadme);
+      dependencies.writeOutput(`Updated README: ${readmePath}\n`);
     }
   );
 

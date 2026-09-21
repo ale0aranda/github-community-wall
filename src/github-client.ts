@@ -1,3 +1,4 @@
+import { cachedFetch } from './cache.js';
 import { assertGitHubResponse, GitHubApiError } from './errors.js';
 
 import type { GitHubHeaders } from './fetchers/graph-fetcher.js';
@@ -16,7 +17,7 @@ export const createGitHubHeaders = (token: string): GitHubHeaders => ({
 export const fetchAuthenticatedUsername = async (
   headers: GitHubHeaders
 ): Promise<string> => {
-  const response = await fetch('https://api.github.com/user', {
+  const response = await cachedFetch('https://api.github.com/user', {
     headers
   });
 

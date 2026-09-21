@@ -26,6 +26,13 @@ export interface WallConfig extends Optional<AvatarGridOptions> {
   json?: boolean | undefined;
   quiet?: boolean | undefined;
   verbose?: boolean | undefined;
+  cacheDir?: string | undefined;
+  cacheTtl?: number | undefined;
+  noCache?: boolean | undefined;
+  refresh?: boolean | undefined;
+  offline?: boolean | undefined;
+  theme?: 'github-dark' | 'github-light' | 'neon' | 'minimal' | undefined;
+  watermark?: string | undefined;
 }
 
 const DEFAULT_CONFIG = '.community-wall.json';

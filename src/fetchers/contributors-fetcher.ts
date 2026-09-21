@@ -1,3 +1,4 @@
+import { cachedFetch } from '../cache.js';
 import { assertGitHubResponse } from '../errors.js';
 import {
   renderAvatarGrid,
@@ -63,7 +64,7 @@ export const fetchContributors = async (
     url.searchParams.set('per_page', '100');
     url.searchParams.set('page', page.toString());
 
-    const response = await fetch(url, {
+    const response = await cachedFetch(url, {
       headers
     });
 

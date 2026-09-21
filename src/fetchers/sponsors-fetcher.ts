@@ -1,3 +1,4 @@
+import { cachedFetch } from '../cache.js';
 import {
   assertGitHubResponse,
   GitHubApiError,
@@ -52,7 +53,7 @@ export const fetchSponsorsGraphQL = async (
     }
   `;
 
-  const response = await fetch('https://api.github.com/graphql', {
+  const response = await cachedFetch('https://api.github.com/graphql', {
     headers,
     method: 'POST',
     body: JSON.stringify({ query })

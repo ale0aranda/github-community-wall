@@ -1,3 +1,4 @@
+import { cachedFetch } from '../cache.js';
 import { assertGitHubResponse } from '../errors.js';
 import {
   renderAvatarGrid,
@@ -31,7 +32,7 @@ const fetchRepositoryUsers = async (
     url.searchParams.set('per_page', '100');
     url.searchParams.set('page', page.toString());
 
-    const response = await fetch(url, { headers });
+    const response = await cachedFetch(url, { headers });
     assertGitHubResponse(response, `fetching ${endpoint} for ${repository}`);
     const users = (await response.json()) as RepositoryUser[];
 
@@ -66,7 +67,7 @@ export const fetchOrganizationMembers = async (
     url.searchParams.set('per_page', '100');
     url.searchParams.set('page', page.toString());
 
-    const response = await fetch(url, { headers });
+    const response = await cachedFetch(url, { headers });
     assertGitHubResponse(
       response,
       `fetching members for the ${organization} organization`

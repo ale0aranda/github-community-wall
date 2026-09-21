@@ -1,3 +1,4 @@
+export { cachedFetch, configureCache } from './cache.js';
 export { loadConfig, mergeConfig } from './config.js';
 export {
   COLUMNS,

@@ -80,6 +80,33 @@ github-community-wall followers octocat --quiet
 github-community-wall followers octocat --verbose
 ```
 
+Cache GitHub responses and avatar downloads locally for faster regenerations:
+
+```sh
+github-community-wall followers octocat --cache-ttl 86400
+github-community-wall followers octocat --refresh
+github-community-wall followers octocat --offline
+github-community-wall followers octocat --no-cache
+```
+
+Add a focused theme or project watermark with `--theme github-dark|github-light|neon|minimal`
+and `--watermark "Built by the community"`.
+
+Update a README while generating the wall. The command replaces an existing block
+or appends one using stable markers:
+
+```md
+<!-- community-wall:start -->
+<!-- community-wall:end -->
+```
+
+```sh
+github-community-wall readme contributors owner/repository \
+  --output assets/contributors.png \
+  --theme github-dark \
+  --watermark "Built by the community"
+```
+
 ## Configuration file
 
 Commands can read defaults from `.community-wall.json` in the current directory:
