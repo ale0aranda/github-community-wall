@@ -1,5 +1,13 @@
 # github-community-wall
 
+## 1.3.0
+
+### Minor Changes
+
+- bd230cd: Add practical wall filtering options and PNG, JPEG, standalone HTML, and JSON metadata output formats.
+- 1109735: Add `config init`, `doctor`, `--quiet`, and `--verbose` CLI utilities.
+- b5e13f2: Add smart local caching, README wall generation, and lightweight themes/watermarks for project branding.
+
 ## 1.2.0
 
 ### Minor Changes
