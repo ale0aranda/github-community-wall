@@ -20,6 +20,10 @@ export interface AvatarGridOptions {
   filterType?: UserFilterType | undefined;
   includeLoginPattern?: string | undefined;
   excludeLoginPattern?: string | undefined;
+  minContributions?: number | undefined;
+  maxContributions?: number | undefined;
+  minFollowers?: number | undefined;
+  maxFollowers?: number | undefined;
 }
 
 export interface TwitterBannerOptions {

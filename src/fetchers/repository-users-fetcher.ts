@@ -173,7 +173,11 @@ export const generateRepositoryUsersWall = async (
   const filteredUsers = applyUserFilter(users, {
     filterType: options.filterType,
     includeLoginPattern: options.includeLoginPattern,
-    excludeLoginPattern: options.excludeLoginPattern
+    excludeLoginPattern: options.excludeLoginPattern,
+    minContributions: options.minContributions,
+    maxContributions: options.maxContributions,
+    minFollowers: options.minFollowers,
+    maxFollowers: options.maxFollowers
   });
 
   return renderAvatarGrid(
@@ -199,7 +203,11 @@ export const generateOrganizationMembersWall = async (
   const filteredMembers = applyUserFilter(members, {
     filterType: options.filterType,
     includeLoginPattern: options.includeLoginPattern,
-    excludeLoginPattern: options.excludeLoginPattern
+    excludeLoginPattern: options.excludeLoginPattern,
+    minContributions: options.minContributions,
+    maxContributions: options.maxContributions,
+    minFollowers: options.minFollowers,
+    maxFollowers: options.maxFollowers
   });
   return renderAvatarGrid(
     filteredMembers.map((member) => member.avatar_url ?? ''),

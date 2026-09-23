@@ -19,4 +19,22 @@ describe('user filters', () => {
       })
     ).toEqual([{ login: 'alice', type: 'User' }]);
   });
+
+  it('filters by contribution and follower counts', () => {
+    const users = [
+      { login: 'alice', type: 'User', contributions: 8, followers: 50 },
+      { login: 'bob', type: 'User', contributions: 12, followers: 120 },
+      { login: 'charlie', type: 'User', contributions: 20, followers: 200 }
+    ];
+
+    expect(
+      applyUserFilter(users, {
+        minContributions: 10,
+        maxContributions: 15,
+        minFollowers: 100
+      })
+    ).toEqual([
+      { login: 'bob', type: 'User', contributions: 12, followers: 120 }
+    ]);
+  });
 });

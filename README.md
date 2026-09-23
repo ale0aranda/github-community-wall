@@ -124,7 +124,9 @@ Commands can read defaults from `.community-wall.json` in the current directory:
   "excludeBots": true,
   "sort": "login",
   "filterType": "user",
-  "includeLoginPattern": "^(alice|bob)$"
+  "includeLoginPattern": "^(alice|bob)$",
+  "minContributions": 10,
+  "minFollowers": 50
 }
 ```
 
@@ -173,7 +175,7 @@ PNG is the default output format. The output format can also be selected with
 `--format png|jpeg|webp|svg|html|json` (or inferred from `.png`, `.jpg`,
 `.jpeg`, `.svg`, `.webp`, `.html`, or `.json` output paths). HTML is a
 standalone document containing the avatar grid; JSON contains avatar metadata
-and layout information. Use `--exclude-bots`, `--sort login|contributions`, `--filter-type all|user|organization|bot`, `--include-login`, `--exclude-login`, and `--limit` to control the input where GitHub provides the relevant metadata. Contributors exclude bots by default, and sources always omit users without an avatar URL.
+and layout information. Use `--exclude-bots`, `--sort login|contributions`, `--filter-type all|user|organization|bot`, `--include-login`, `--exclude-login`, `--min-contributions`, `--max-contributions`, `--min-followers`, `--max-followers`, and `--limit` to control the input where GitHub provides the relevant metadata. Contributors exclude bots by default, and sources always omit users without an avatar URL.
 
 Examples:
 
@@ -183,10 +185,16 @@ github-community-wall followers octocat \
   --filter-type user \
   --include-login '^(alice|bob)$'
 
-# Exclude bot accounts and org entries from a repository wall
+# Keep only active contributors with a minimum contribution threshold
 github-community-wall contributors owner/repository \
   --filter-type user \
-  --exclude-login 'bot$'
+  --min-contributions 10 \
+  --max-contributions 200
+
+# Only include followers with a meaningful audience
+github-community-wall followers octocat \
+  --min-followers 100 \
+  --max-followers 5000
 ```
 
 The renderer supports configurable backgrounds, gaps, circular or square avatars, titles, and subtitles. `--dry-run --json` can be used to inspect the resolved input without writing an image.

@@ -4,11 +4,17 @@ export interface UserFilterConfig {
   filterType?: UserFilterType | undefined;
   includeLoginPattern?: string | undefined;
   excludeLoginPattern?: string | undefined;
+  minContributions?: number | undefined;
+  maxContributions?: number | undefined;
+  minFollowers?: number | undefined;
+  maxFollowers?: number | undefined;
 }
 
 export interface UserLike {
   login?: string | null;
   type?: string | null;
+  contributions?: number | null;
+  followers?: number | null;
 }
 
 const matchesType = (user: UserLike, filterType: UserFilterType): boolean => {
@@ -29,6 +35,26 @@ const matchesType = (user: UserLike, filterType: UserFilterType): boolean => {
     default:
       return true;
   }
+};
+
+const matchesMetricRange = (
+  value: number | null | undefined,
+  minimum: number | undefined,
+  maximum: number | undefined
+): boolean => {
+  if (value === undefined || value === null) {
+    return true;
+  }
+
+  if (minimum !== undefined && value < minimum) {
+    return false;
+  }
+
+  if (maximum !== undefined && value > maximum) {
+    return false;
+  }
+
+  return true;
 };
 
 export const applyUserFilter = <T extends UserLike>(
@@ -56,6 +82,26 @@ export const applyUserFilter = <T extends UserLike>(
     }
 
     if (excludePattern && excludePattern.test(login)) {
+      return false;
+    }
+
+    if (
+      !matchesMetricRange(
+        user.contributions ?? null,
+        config.minContributions,
+        config.maxContributions
+      )
+    ) {
+      return false;
+    }
+
+    if (
+      !matchesMetricRange(
+        user.followers ?? null,
+        config.minFollowers,
+        config.maxFollowers
+      )
+    ) {
       return false;
     }
 

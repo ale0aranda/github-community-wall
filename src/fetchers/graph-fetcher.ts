@@ -37,6 +37,9 @@ export const fetchGraphQL = async (
           nodes {
             avatarUrl
             login
+            followers {
+              totalCount
+            }
             __typename
           }
         }
@@ -109,10 +112,15 @@ export const fetchFollowers = async (
         continue;
       }
 
+      const followerNode = node as typeof node & {
+        followers?: { totalCount?: number } | null;
+      };
+
       followers.push({
         avatarUrl: node.avatarUrl,
         login: node.login ?? `follower-${followers.length}`,
-        type: node.__typename ?? 'User'
+        type: node.__typename ?? 'User',
+        followers: followerNode.followers?.totalCount ?? 0
       });
 
       if (followers.length >= limit) {
@@ -160,7 +168,11 @@ export const generateGraph = async (
     {
       filterType: options?.filterType,
       includeLoginPattern: options?.includeLoginPattern,
-      excludeLoginPattern: options?.excludeLoginPattern
+      excludeLoginPattern: options?.excludeLoginPattern,
+      minContributions: options?.minContributions,
+      maxContributions: options?.maxContributions,
+      minFollowers: options?.minFollowers,
+      maxFollowers: options?.maxFollowers
     }
   );
 

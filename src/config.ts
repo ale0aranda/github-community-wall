@@ -26,6 +26,10 @@ export interface WallConfig extends Optional<AvatarGridOptions> {
   includeLoginPattern?: string | undefined;
   excludeLogin?: string | undefined;
   excludeLoginPattern?: string | undefined;
+  minContributions?: number | undefined;
+  maxContributions?: number | undefined;
+  minFollowers?: number | undefined;
+  maxFollowers?: number | undefined;
   twitterBanner?: boolean | undefined;
   dryRun?: boolean | undefined;
   json?: boolean | undefined;

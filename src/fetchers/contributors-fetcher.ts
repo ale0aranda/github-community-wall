@@ -139,7 +139,11 @@ export const generateContributorsWall = async (
   contributors = applyUserFilter(contributors, {
     filterType: options?.filterType,
     includeLoginPattern: options?.includeLoginPattern,
-    excludeLoginPattern: options?.excludeLoginPattern
+    excludeLoginPattern: options?.excludeLoginPattern,
+    minContributions: options?.minContributions,
+    maxContributions: options?.maxContributions,
+    minFollowers: options?.minFollowers,
+    maxFollowers: options?.maxFollowers
   });
 
   return renderAvatarGrid(

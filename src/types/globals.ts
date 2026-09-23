@@ -2,6 +2,7 @@ export interface GitHubFollower {
   avatarUrl: string;
   login: string;
   type?: string;
+  followers?: number;
 }
 
 export interface FollowersPageInfo {
@@ -18,6 +19,15 @@ export interface FollowersData {
   };
 }
 
+export interface GitHubGraphQLFollowerNode {
+  avatarUrl: string;
+  login?: string | null;
+  followers?: {
+    totalCount: number;
+  } | null;
+  __typename?: string | null;
+}
+
 export interface GitHubGraphQLErrorItem {
   message: string;
 }
@@ -25,6 +35,18 @@ export interface GitHubGraphQLErrorItem {
 export interface GitHubGraphQLResponse {
   data?: {
     user: FollowersData['user'] | null;
+  };
+  errors?: GitHubGraphQLErrorItem[];
+}
+
+export interface GitHubFollowerGraphQLResponse {
+  data?: {
+    user: {
+      followers: {
+        pageInfo: FollowersPageInfo;
+        nodes: GitHubGraphQLFollowerNode[];
+      };
+    } | null;
   };
   errors?: GitHubGraphQLErrorItem[];
 }

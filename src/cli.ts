@@ -54,6 +54,10 @@ interface WallOptions {
   includeLoginPattern?: string | undefined;
   excludeLogin?: string | undefined;
   excludeLoginPattern?: string | undefined;
+  minContributions?: number | undefined;
+  maxContributions?: number | undefined;
+  minFollowers?: number | undefined;
+  maxFollowers?: number | undefined;
   quiet?: boolean | undefined;
   verbose?: boolean | undefined;
   cacheDir?: string | undefined;
@@ -271,6 +275,26 @@ const addWallOptions = (command: Command, limitDescription: string): Command =>
       '--exclude-login <pattern>',
       'Exclude logins that match this regular expression'
     )
+    .option(
+      '--min-contributions <count>',
+      'Only include contributors with at least this many contributions',
+      parseNonNegativeInteger
+    )
+    .option(
+      '--max-contributions <count>',
+      'Only include contributors with at most this many contributions',
+      parseNonNegativeInteger
+    )
+    .option(
+      '--min-followers <count>',
+      'Only include users with at least this many followers',
+      parseNonNegativeInteger
+    )
+    .option(
+      '--max-followers <count>',
+      'Only include users with at most this many followers',
+      parseNonNegativeInteger
+    )
     .option('--quiet', 'Suppress success output')
     .option('--verbose', 'Print resolved options and progress details')
     .option('--cache-dir <path>', 'Local cache directory')
@@ -352,6 +376,64 @@ const resolveWallOptions = async (
   }
 
   if (
+    merged.minContributions !== undefined
+    && (merged.minContributions < 0
+      || !Number.isInteger(merged.minContributions))
+  ) {
+    throw new InvalidArgumentError(
+      'Minimum contributions must be a non-negative integer'
+    );
+  }
+
+  if (
+    merged.maxContributions !== undefined
+    && (merged.maxContributions < 0
+      || !Number.isInteger(merged.maxContributions))
+  ) {
+    throw new InvalidArgumentError(
+      'Maximum contributions must be a non-negative integer'
+    );
+  }
+
+  if (
+    merged.minFollowers !== undefined
+    && (merged.minFollowers < 0 || !Number.isInteger(merged.minFollowers))
+  ) {
+    throw new InvalidArgumentError(
+      'Minimum followers must be a non-negative integer'
+    );
+  }
+
+  if (
+    merged.maxFollowers !== undefined
+    && (merged.maxFollowers < 0 || !Number.isInteger(merged.maxFollowers))
+  ) {
+    throw new InvalidArgumentError(
+      'Maximum followers must be a non-negative integer'
+    );
+  }
+
+  if (
+    merged.minContributions !== undefined
+    && merged.maxContributions !== undefined
+    && merged.minContributions > merged.maxContributions
+  ) {
+    throw new InvalidArgumentError(
+      'Minimum contributions cannot be greater than maximum contributions'
+    );
+  }
+
+  if (
+    merged.minFollowers !== undefined
+    && merged.maxFollowers !== undefined
+    && merged.minFollowers > merged.maxFollowers
+  ) {
+    throw new InvalidArgumentError(
+      'Minimum followers cannot be greater than maximum followers'
+    );
+  }
+
+  if (
     merged.theme
     && !['github-dark', 'github-light', 'neon', 'minimal'].includes(
       merged.theme
@@ -388,6 +470,10 @@ const resolveWallOptions = async (
     includeLoginPattern,
     excludeLogin: merged.excludeLogin,
     excludeLoginPattern,
+    minContributions: merged.minContributions,
+    maxContributions: merged.maxContributions,
+    minFollowers: merged.minFollowers,
+    maxFollowers: merged.maxFollowers,
     quiet: merged.quiet,
     verbose: merged.verbose,
     cacheDir: merged.cacheDir,
@@ -415,7 +501,11 @@ const getRenderOptions = (options: WallOptions): AvatarGridOptions => ({
   watermark: options.watermark,
   filterType: options.filterType,
   includeLoginPattern: options.includeLoginPattern,
-  excludeLoginPattern: options.excludeLoginPattern
+  excludeLoginPattern: options.excludeLoginPattern,
+  minContributions: options.minContributions,
+  maxContributions: options.maxContributions,
+  minFollowers: options.minFollowers,
+  maxFollowers: options.maxFollowers
 });
 
 const hasCustomRenderOptions = (options: WallOptions): boolean =>
@@ -430,6 +520,10 @@ const hasCustomRenderOptions = (options: WallOptions): boolean =>
       || options.filterType
       || options.includeLoginPattern
       || options.excludeLoginPattern
+      || options.minContributions !== undefined
+      || options.maxContributions !== undefined
+      || options.minFollowers !== undefined
+      || options.maxFollowers !== undefined
       || options.theme
       || options.watermark
       || (options.format && options.format !== 'png')
