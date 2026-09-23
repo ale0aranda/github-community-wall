@@ -2,6 +2,8 @@ import { type Canvas, createCanvas, type SKRSContext2D } from '@napi-rs/canvas';
 
 import { fetchImages } from '../fetchers/images-fetcher.js';
 
+export type UserFilterType = 'all' | 'user' | 'organization' | 'bot';
+
 export interface AvatarGridOptions {
   columns: number;
   imageSize: number;
@@ -15,6 +17,9 @@ export interface AvatarGridOptions {
   sort?: 'login' | 'contributions' | 'none' | undefined;
   theme?: 'github-dark' | 'github-light' | 'neon' | 'minimal' | undefined;
   watermark?: string | undefined;
+  filterType?: UserFilterType | undefined;
+  includeLoginPattern?: string | undefined;
+  excludeLoginPattern?: string | undefined;
 }
 
 export interface TwitterBannerOptions {

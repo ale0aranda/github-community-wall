@@ -1,5 +1,7 @@
 export interface GitHubFollower {
   avatarUrl: string;
+  login: string;
+  type?: string;
 }
 
 export interface FollowersPageInfo {

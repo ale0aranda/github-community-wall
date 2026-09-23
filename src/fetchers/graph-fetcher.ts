@@ -10,9 +10,14 @@ import {
   renderTwitterBanner,
   validateAvatarGridOptions
 } from '../renderer/avatar-grid-renderer.js';
+import { applyUserFilter } from '../user-filters.js';
 
 import type { AvatarGridOptions } from '../renderer/avatar-grid-renderer.js';
-import type { FollowersData, GitHubGraphQLResponse } from '../types/globals.js';
+import type {
+  FollowersData,
+  GitHubFollower,
+  GitHubGraphQLResponse
+} from '../types/globals.js';
 
 export type GitHubHeaders = Record<string, string>;
 
@@ -31,6 +36,8 @@ export const fetchGraphQL = async (
           }
           nodes {
             avatarUrl
+            login
+            __typename
           }
         }
       }
@@ -75,20 +82,43 @@ export const fetchFollowersPfps = async (
   headers: GitHubHeaders,
   limit = 100
 ): Promise<string[]> => {
+  const followers = await fetchFollowers(username, headers, limit);
+  return followers.map((follower) => follower.avatarUrl);
+};
+
+export const fetchFollowers = async (
+  username: string,
+  headers: GitHubHeaders,
+  limit = 100
+): Promise<GitHubFollower[]> => {
   if (limit <= 0) {
     return [];
   }
 
-  const avatarUrls: string[] = [];
+  const followers: GitHubFollower[] = [];
   let cursor: string | null = null;
   let hasNextPage = true;
 
-  while (hasNextPage && avatarUrls.length < limit) {
+  while (hasNextPage && followers.length < limit) {
     const followersData = await fetchGraphQL(username, headers, cursor);
 
     const { nodes, pageInfo } = followersData.user.followers;
 
-    avatarUrls.push(...nodes.map((node) => node.avatarUrl));
+    for (const node of nodes) {
+      if (!node.avatarUrl) {
+        continue;
+      }
+
+      followers.push({
+        avatarUrl: node.avatarUrl,
+        login: node.login ?? `follower-${followers.length}`,
+        type: node.__typename ?? 'User'
+      });
+
+      if (followers.length >= limit) {
+        break;
+      }
+    }
 
     cursor = pageInfo.endCursor;
     hasNextPage = pageInfo.hasNextPage;
@@ -101,7 +131,7 @@ export const fetchFollowersPfps = async (
     }
   }
 
-  return avatarUrls.slice(0, limit);
+  return followers.slice(0, limit);
 };
 
 export const generateGraph = async (
@@ -121,11 +151,20 @@ export const generateGraph = async (
 
   validateAvatarGridOptions(renderOptions);
 
-  const avatarUrls = await fetchFollowersPfps(
-    username,
-    headers,
-    twitterBanner ? Math.min(limit, TWITTER_BANNER_LIMIT) : limit
+  const filteredFollowers = applyUserFilter(
+    await fetchFollowers(
+      username,
+      headers,
+      twitterBanner ? Math.min(limit, TWITTER_BANNER_LIMIT) : limit
+    ),
+    {
+      filterType: options?.filterType,
+      includeLoginPattern: options?.includeLoginPattern,
+      excludeLoginPattern: options?.excludeLoginPattern
+    }
   );
+
+  const avatarUrls = filteredFollowers.map((follower) => follower.avatarUrl);
 
   if (twitterBanner) {
     return renderTwitterBanner(avatarUrls, {

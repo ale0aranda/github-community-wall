@@ -4,6 +4,7 @@ import {
   renderAvatarGrid,
   validateAvatarGridOptions
 } from '../renderer/avatar-grid-renderer.js';
+import { applyUserFilter } from '../user-filters.js';
 
 import type { AvatarGridOptions } from '../renderer/avatar-grid-renderer.js';
 import type { GitHubContributor } from '../types/globals.js';
@@ -134,6 +135,12 @@ export const generateContributorsWall = async (
       (a, b) => b.contributions - a.contributions
     );
   }
+
+  contributors = applyUserFilter(contributors, {
+    filterType: options?.filterType,
+    includeLoginPattern: options?.includeLoginPattern,
+    excludeLoginPattern: options?.excludeLoginPattern
+  });
 
   return renderAvatarGrid(
     contributors.map((contributor) => contributor.avatarUrl),

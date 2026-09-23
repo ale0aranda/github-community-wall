@@ -21,6 +21,11 @@ export interface WallConfig extends Optional<AvatarGridOptions> {
   includeBots?: boolean | undefined;
   excludeBots?: boolean | undefined;
   sort?: 'login' | 'contributions' | 'none' | undefined;
+  filterType?: 'all' | 'user' | 'organization' | 'bot' | undefined;
+  includeLogin?: string | undefined;
+  includeLoginPattern?: string | undefined;
+  excludeLogin?: string | undefined;
+  excludeLoginPattern?: string | undefined;
   twitterBanner?: boolean | undefined;
   dryRun?: boolean | undefined;
   json?: boolean | undefined;

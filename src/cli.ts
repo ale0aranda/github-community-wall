@@ -26,7 +26,10 @@ import {
 } from './github-client.js';
 
 import type { GitHubHeaders } from './fetchers/graph-fetcher.js';
-import type { AvatarGridOptions } from './renderer/avatar-grid-renderer.js';
+import type {
+  AvatarGridOptions,
+  UserFilterType
+} from './renderer/avatar-grid-renderer.js';
 
 interface WallOptions {
   columns: number;
@@ -46,6 +49,11 @@ interface WallOptions {
   twitterBanner?: boolean | undefined;
   excludeBots?: boolean | undefined;
   sort?: 'login' | 'contributions' | 'none' | undefined;
+  filterType?: UserFilterType | undefined;
+  includeLogin?: string | undefined;
+  includeLoginPattern?: string | undefined;
+  excludeLogin?: string | undefined;
+  excludeLoginPattern?: string | undefined;
   quiet?: boolean | undefined;
   verbose?: boolean | undefined;
   cacheDir?: string | undefined;
@@ -251,6 +259,18 @@ const addWallOptions = (command: Command, limitDescription: string): Command =>
     .option('--subtitle <text>', 'Optional subtitle')
     .option('--exclude-bots', 'Exclude bot accounts where available')
     .option('--sort <field>', 'Sort by login or contributions')
+    .option(
+      '--filter-type <type>',
+      'Filter users by type: all, user, organization, or bot'
+    )
+    .option(
+      '--include-login <pattern>',
+      'Include only logins that match this regular expression'
+    )
+    .option(
+      '--exclude-login <pattern>',
+      'Exclude logins that match this regular expression'
+    )
     .option('--quiet', 'Suppress success output')
     .option('--verbose', 'Print resolved options and progress details')
     .option('--cache-dir <path>', 'Local cache directory')
@@ -323,6 +343,15 @@ const resolveWallOptions = async (
   }
 
   if (
+    merged.filterType
+    && !['all', 'user', 'organization', 'bot'].includes(merged.filterType)
+  ) {
+    throw new InvalidArgumentError(
+      'Filter type must be all, user, organization, or bot'
+    );
+  }
+
+  if (
     merged.theme
     && !['github-dark', 'github-light', 'neon', 'minimal'].includes(
       merged.theme
@@ -332,6 +361,9 @@ const resolveWallOptions = async (
       'Theme must be github-dark, github-light, neon, or minimal'
     );
   }
+
+  const includeLoginPattern = merged.includeLoginPattern ?? merged.includeLogin;
+  const excludeLoginPattern = merged.excludeLoginPattern ?? merged.excludeLogin;
 
   return {
     columns: merged.columns ?? COLUMNS,
@@ -351,6 +383,11 @@ const resolveWallOptions = async (
     twitterBanner: merged.twitterBanner,
     excludeBots: merged.excludeBots,
     sort: merged.sort,
+    filterType: merged.filterType,
+    includeLogin: merged.includeLogin,
+    includeLoginPattern,
+    excludeLogin: merged.excludeLogin,
+    excludeLoginPattern,
     quiet: merged.quiet,
     verbose: merged.verbose,
     cacheDir: merged.cacheDir,
@@ -375,7 +412,10 @@ const getRenderOptions = (options: WallOptions): AvatarGridOptions => ({
   excludeBots: options.excludeBots,
   sort: options.sort,
   theme: options.theme,
-  watermark: options.watermark
+  watermark: options.watermark,
+  filterType: options.filterType,
+  includeLoginPattern: options.includeLoginPattern,
+  excludeLoginPattern: options.excludeLoginPattern
 });
 
 const hasCustomRenderOptions = (options: WallOptions): boolean =>
@@ -387,6 +427,9 @@ const hasCustomRenderOptions = (options: WallOptions): boolean =>
       || options.subtitle
       || options.sort
       || options.excludeBots !== undefined
+      || options.filterType
+      || options.includeLoginPattern
+      || options.excludeLoginPattern
       || options.theme
       || options.watermark
       || (options.format && options.format !== 'png')

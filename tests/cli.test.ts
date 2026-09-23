@@ -256,6 +256,48 @@ describe('GitHub Community Wall CLI', () => {
     );
   });
 
+  it('accepts advanced user filters', async () => {
+    const dependencies = createDependencies();
+    const cli = createCli(dependencies);
+
+    await cli.parseAsync(
+      [
+        'followers',
+        'ale0aranda',
+        '--github-token',
+        'test-token',
+        '--filter-type',
+        'user',
+        '--include-login',
+        '^ale',
+        '--exclude-login',
+        'bot$'
+      ],
+      {
+        from: 'user'
+      }
+    );
+
+    const generateFollowersGraph = vi.mocked(
+      dependencies.generateFollowersGraph
+    );
+
+    expect(generateFollowersGraph).toHaveBeenCalledTimes(1);
+    const call = generateFollowersGraph.mock.calls[0];
+
+    expect(call?.[0]).toBe('ale0aranda');
+    expect(call?.[1]).toBe(64);
+    expect(call?.[2]).toBe(10);
+    expect(call?.[3]).toBeDefined();
+    expect(call?.[4]).toBe(100);
+    expect(call?.[5]).toBe(false);
+    expect(call?.[6]).toMatchObject({
+      filterType: 'user',
+      includeLoginPattern: '^ale',
+      excludeLoginPattern: 'bot$'
+    });
+  });
+
   it('rejects a missing GitHub token', async () => {
     const dependencies = createDependencies();
     const cli = createCli(dependencies);

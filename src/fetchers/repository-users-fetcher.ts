@@ -4,11 +4,14 @@ import {
   renderAvatarGrid,
   validateAvatarGridOptions
 } from '../renderer/avatar-grid-renderer.js';
+import { applyUserFilter } from '../user-filters.js';
 
 import type { GitHubHeaders } from './graph-fetcher.js';
 
 interface RepositoryUser {
   avatar_url?: string;
+  login?: string;
+  type?: string;
 }
 
 const fetchRepositoryUsers = async (
@@ -16,16 +19,16 @@ const fetchRepositoryUsers = async (
   endpoint: 'stargazers' | 'subscribers',
   headers: GitHubHeaders,
   limit: number
-): Promise<string[]> => {
+): Promise<RepositoryUser[]> => {
   const [owner, name] = repository.trim().split('/');
   if (!owner || !name || repository.trim().split('/').length !== 2) {
     throw new Error('Repository must use the format owner/name');
   }
 
-  const avatars: string[] = [];
+  const users: RepositoryUser[] = [];
   let page = 1;
 
-  while (avatars.length < limit) {
+  while (users.length < limit) {
     const url = new URL(
       `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/${endpoint}`
     );
@@ -34,33 +37,39 @@ const fetchRepositoryUsers = async (
 
     const response = await cachedFetch(url, { headers });
     assertGitHubResponse(response, `fetching ${endpoint} for ${repository}`);
-    const users = (await response.json()) as RepositoryUser[];
+    const pageUsers = (await response.json()) as RepositoryUser[];
 
-    avatars.push(
-      ...users.flatMap((user) => (user.avatar_url ? [user.avatar_url] : []))
-    );
-    if (users.length < 100) {
+    for (const user of pageUsers) {
+      if (!user.avatar_url) {
+        continue;
+      }
+      users.push(user);
+      if (users.length >= limit) {
+        break;
+      }
+    }
+    if (pageUsers.length < 100) {
       break;
     }
     page += 1;
   }
 
-  return avatars.slice(0, limit);
+  return users.slice(0, limit);
 };
 
-export const fetchOrganizationMembers = async (
+const fetchOrganizationMembersData = async (
   organization: string,
   headers: GitHubHeaders,
   limit = 100
-): Promise<string[]> => {
+): Promise<RepositoryUser[]> => {
   if (limit <= 0) {
     return [];
   }
 
-  const avatars: string[] = [];
+  const members: RepositoryUser[] = [];
   let page = 1;
 
-  while (avatars.length < limit) {
+  while (members.length < limit) {
     const url = new URL(
       `https://api.github.com/orgs/${encodeURIComponent(organization)}/members`
     );
@@ -72,39 +81,76 @@ export const fetchOrganizationMembers = async (
       response,
       `fetching members for the ${organization} organization`
     );
-    const members = (await response.json()) as RepositoryUser[];
+    const pageMembers = (await response.json()) as RepositoryUser[];
 
-    avatars.push(
-      ...members.flatMap((member) =>
-        member.avatar_url ? [member.avatar_url] : []
-      )
-    );
-    if (members.length < 100) {
+    for (const member of pageMembers) {
+      if (!member.avatar_url) {
+        continue;
+      }
+      members.push(member);
+      if (members.length >= limit) {
+        break;
+      }
+    }
+    if (pageMembers.length < 100) {
       break;
     }
     page += 1;
   }
 
-  return avatars.slice(0, limit);
+  return members.slice(0, limit);
 };
 
-export const fetchStargazers = (
-  repository: string,
+export const fetchOrganizationMembers = async (
+  organization: string,
   headers: GitHubHeaders,
   limit = 100
-): Promise<string[]> =>
-  limit <= 0
-    ? Promise.resolve([])
-    : fetchRepositoryUsers(repository, 'stargazers', headers, limit);
+): Promise<string[]> => {
+  const members = await fetchOrganizationMembersData(
+    organization,
+    headers,
+    limit
+  );
+  return members.map((member) => member.avatar_url ?? '');
+};
 
-export const fetchWatchers = (
+export const fetchStargazers = async (
   repository: string,
   headers: GitHubHeaders,
   limit = 100
-): Promise<string[]> =>
-  limit <= 0
-    ? Promise.resolve([])
-    : fetchRepositoryUsers(repository, 'subscribers', headers, limit);
+): Promise<string[]> => {
+  if (limit <= 0) {
+    return [];
+  }
+
+  const stargazers = await fetchRepositoryUsers(
+    repository,
+    'stargazers',
+    headers,
+    limit
+  );
+
+  return stargazers.map((user) => user.avatar_url ?? '');
+};
+
+export const fetchWatchers = async (
+  repository: string,
+  headers: GitHubHeaders,
+  limit = 100
+): Promise<string[]> => {
+  if (limit <= 0) {
+    return [];
+  }
+
+  const watchers = await fetchRepositoryUsers(
+    repository,
+    'subscribers',
+    headers,
+    limit
+  );
+
+  return watchers.map((user) => user.avatar_url ?? '');
+};
 
 export const generateRepositoryUsersWall = async (
   repository: string,
@@ -116,11 +162,24 @@ export const generateRepositoryUsersWall = async (
   options: Parameters<typeof renderAvatarGrid>[1] = { imageSize, columns }
 ): Promise<Buffer> => {
   validateAvatarGridOptions(options);
-  const avatars =
-    source === 'stargazers'
-      ? await fetchStargazers(repository, headers, limit)
-      : await fetchWatchers(repository, headers, limit);
-  return renderAvatarGrid(avatars, options);
+
+  const users = await fetchRepositoryUsers(
+    repository,
+    source === 'stargazers' ? 'stargazers' : 'subscribers',
+    headers,
+    limit
+  );
+
+  const filteredUsers = applyUserFilter(users, {
+    filterType: options.filterType,
+    includeLoginPattern: options.includeLoginPattern,
+    excludeLoginPattern: options.excludeLoginPattern
+  });
+
+  return renderAvatarGrid(
+    filteredUsers.map((user) => user.avatar_url ?? ''),
+    options
+  );
 };
 
 export const generateOrganizationMembersWall = async (
@@ -132,6 +191,18 @@ export const generateOrganizationMembersWall = async (
   options: Parameters<typeof renderAvatarGrid>[1] = { imageSize, columns }
 ): Promise<Buffer> => {
   validateAvatarGridOptions(options);
-  const avatars = await fetchOrganizationMembers(organization, headers, limit);
-  return renderAvatarGrid(avatars, options);
+  const members = await fetchOrganizationMembersData(
+    organization,
+    headers,
+    limit
+  );
+  const filteredMembers = applyUserFilter(members, {
+    filterType: options.filterType,
+    includeLoginPattern: options.includeLoginPattern,
+    excludeLoginPattern: options.excludeLoginPattern
+  });
+  return renderAvatarGrid(
+    filteredMembers.map((member) => member.avatar_url ?? ''),
+    options
+  );
 };

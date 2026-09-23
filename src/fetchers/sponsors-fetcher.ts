@@ -8,6 +8,7 @@ import {
   renderAvatarGrid,
   validateAvatarGridOptions
 } from '../renderer/avatar-grid-renderer.js';
+import { applyUserFilter } from '../user-filters.js';
 
 import type { AvatarGridOptions } from '../renderer/avatar-grid-renderer.js';
 import type {
@@ -142,7 +143,14 @@ export const generateSponsorsWall = async (
 
   validateAvatarGridOptions(renderOptions);
 
-  const sponsors = await fetchSponsors(username, headers, limit);
+  const sponsors = applyUserFilter(
+    await fetchSponsors(username, headers, limit),
+    {
+      filterType: options?.filterType,
+      includeLoginPattern: options?.includeLoginPattern,
+      excludeLoginPattern: options?.excludeLoginPattern
+    }
+  );
 
   return renderAvatarGrid(
     sponsors.map((sponsor) => sponsor.avatarUrl),

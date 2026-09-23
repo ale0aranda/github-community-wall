@@ -56,7 +56,8 @@ export type {
 } from './fetchers/images-fetcher.js';
 export type {
   AvatarGridOptions,
-  TwitterBannerOptions
+  TwitterBannerOptions,
+  UserFilterType
 } from './renderer/avatar-grid-renderer.js';
 export type {
   FollowersData,

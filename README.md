@@ -122,7 +122,9 @@ Commands can read defaults from `.community-wall.json` in the current directory:
   "output": "assets/community-wall.png",
   "format": "png",
   "excludeBots": true,
-  "sort": "login"
+  "sort": "login",
+  "filterType": "user",
+  "includeLoginPattern": "^(alice|bob)$"
 }
 ```
 
@@ -171,14 +173,23 @@ PNG is the default output format. The output format can also be selected with
 `--format png|jpeg|webp|svg|html|json` (or inferred from `.png`, `.jpg`,
 `.jpeg`, `.svg`, `.webp`, `.html`, or `.json` output paths). HTML is a
 standalone document containing the avatar grid; JSON contains avatar metadata
-and layout information. Use `--exclude-bots`, `--sort login|contributions`,
-and `--limit` to control the input where GitHub provides the relevant metadata.
-Contributors exclude bots by default, and sources always omit users without an
-avatar URL.
+and layout information. Use `--exclude-bots`, `--sort login|contributions`, `--filter-type all|user|organization|bot`, `--include-login`, `--exclude-login`, and `--limit` to control the input where GitHub provides the relevant metadata. Contributors exclude bots by default, and sources always omit users without an avatar URL.
 
-The renderer supports configurable backgrounds, gaps, circular or square
-avatars, titles, and subtitles. `--dry-run --json` can be used to inspect the
-resolved input without writing an image.
+Examples:
+
+```sh
+# Only regular users matching a pattern
+github-community-wall followers octocat \
+  --filter-type user \
+  --include-login '^(alice|bob)$'
+
+# Exclude bot accounts and org entries from a repository wall
+github-community-wall contributors owner/repository \
+  --filter-type user \
+  --exclude-login 'bot$'
+```
+
+The renderer supports configurable backgrounds, gaps, circular or square avatars, titles, and subtitles. `--dry-run --json` can be used to inspect the resolved input without writing an image.
 
 ## License
 
