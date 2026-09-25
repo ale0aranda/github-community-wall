@@ -31,7 +31,6 @@ const matchesType = (user: UserLike, filterType: UserFilterType): boolean => {
       return isOrganization;
     case 'user':
       return isUser;
-    case 'all':
     default:
       return true;
   }
@@ -81,7 +80,7 @@ export const applyUserFilter = <T extends UserLike>(
       return false;
     }
 
-    if (excludePattern && excludePattern.test(login)) {
+    if (excludePattern?.test(login)) {
       return false;
     }
 

@@ -3,6 +3,7 @@ export interface GitHubFollower {
   login: string;
   type?: string;
   followers?: number;
+  __typename?: string | null;
 }
 
 export interface FollowersPageInfo {
