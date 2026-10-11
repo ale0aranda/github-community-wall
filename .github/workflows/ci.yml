@@ -24,15 +24,17 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Install pnpm
-        run: npm install --global pnpm@11.5.1
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.5.1
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -45,6 +47,9 @@ jobs:
 
       - name: Build package
         run: pnpm build
+
+      - name: Smoke test packed npm package
+        run: pnpm test:package
 
       - name: Verify CLI
         run: |

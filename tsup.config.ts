@@ -1,19 +1,10 @@
-import { defineConfig, type Options } from 'tsup';
+import { defineTsupLibraryConfig } from '@ale0aranda/rules/tsup/library';
 
-export default defineConfig({
+export default defineTsupLibraryConfig({
   entry: {
     index: 'src/index.ts',
     cli: 'src/bin.ts'
   },
-  format: 'esm',
-  outDir: 'dist',
-  platform: 'node',
-  target: 'es2022',
   tsconfig: 'tsconfig.json',
-  sourcemap: true,
-  treeshake: true,
-  clean: true,
-  dts: true,
-  splitting: false,
-  minify: false
-} as Options);
+  target: 'es2022'
+});
