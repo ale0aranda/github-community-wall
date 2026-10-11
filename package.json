@@ -78,7 +78,7 @@
   },
   "dependencies": {
     "@napi-rs/canvas": "1.0.10",
-    "commander": "12.1.0"
+    "commander": "15.0.0"
   },
   "packageManager": "pnpm@11.5.1"
 }
