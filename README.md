@@ -12,7 +12,7 @@ post, or social banner.
 
 ![Followers wall](./assets/followers.png)
 
-![GitHub Community Wall preview](./assets/open-graph.svg)
+![GitHub Community Wall preview](./assets/opengraph.png)
 
 Generate a wall locally:
 
