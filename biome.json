@@ -1,6 +1,9 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "extends": ["@ale0aranda/rules/biome/base", "@ale0aranda/rules/biome/node"],
+  "files": {
+    "includes": ["!apps/docs/**/*.astro", "!apps/docs/**/*.css"]
+  },
   "linter": {
     "rules": {
       "complexity": {
