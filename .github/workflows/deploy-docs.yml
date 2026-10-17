@@ -39,10 +39,10 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm --dir apps/docs install --no-frozen-lockfile
 
       - name: Build documentation
-        run: pnpm build:docs
+        run: pnpm --dir apps/docs build
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
