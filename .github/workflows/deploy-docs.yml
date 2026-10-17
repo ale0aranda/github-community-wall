@@ -38,6 +38,9 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Install root dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Install dependencies
         run: npm install --prefix apps/docs
 
