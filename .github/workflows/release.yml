@@ -42,6 +42,7 @@ jobs:
         run: pnpm check
 
       - name: Create release pull request or publish
+        id: changesets
         uses: changesets/action@v2
         with:
           version-script: pnpm changeset:version
@@ -52,11 +53,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Sync GitHub release with package version
+        if: steps.changesets.outputs.published == 'true'
         shell: bash
         run: |
           set -euo pipefail
 
-          version="$(node -p "require('./package.json').version")"
+          version="$(node -p "require('./packages/github-community-wall/package.json').version")"
           tag="v${version}"
 
           if ! git rev-parse "$tag" >/dev/null 2>&1; then

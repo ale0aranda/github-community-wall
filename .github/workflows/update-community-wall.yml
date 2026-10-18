@@ -35,13 +35,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build CLI
-        run: pnpm build
+        run: pnpm build:cli
 
       - name: Generate followers wall
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          node dist/cli.js followers "${{ github.repository_owner }}" \
+          node packages/github-community-wall/dist/cli.js followers "${{ github.repository_owner }}" \
             --output assets/followers.png \
             --image-size 64 \
             --columns 10 \
@@ -51,7 +51,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          node dist/cli.js followers "${{ github.repository_owner }}" \
+          node packages/github-community-wall/dist/cli.js followers "${{ github.repository_owner }}" \
             --twitter-banner \
             --output assets/followers-banner.png \
             --image-size 64 \
@@ -61,7 +61,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          node dist/cli.js contributors "${{ github.repository }}" \
+          node packages/github-community-wall/dist/cli.js contributors "${{ github.repository }}" \
             --output assets/contributors.png \
             --image-size 64 \
             --columns 10 \

@@ -53,6 +53,6 @@ jobs:
 
       - name: Verify CLI
         run: |
-          node dist/cli.js --version
-          node dist/cli.js --help
-          node dist/cli.js followers --help
+          node packages/github-community-wall/dist/cli.js --version
+          node packages/github-community-wall/dist/cli.js --help
+          node packages/github-community-wall/dist/cli.js followers --help
