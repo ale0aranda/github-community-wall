@@ -4,22 +4,30 @@ import Icon from "./Icon.astro";
 interface Props {
   code: string;
   label?: string;
+  class?: string;
 }
 
-const { code, label = "Terminal command" } = Astro.props;
+const { code, label = "Terminal command", class: className } = Astro.props;
 ---
 
-<div class="code-block">
-  <pre aria-label={label}><code>{code}</code></pre>
+<div
+  class:list={[
+    "relative my-4 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-900",
+    className,
+  ]}
+>
+  <pre
+    class="m-0 overflow-x-auto py-4 pr-14 pl-4 font-mono text-xs leading-loose text-slate-900 dark:text-slate-100"
+    aria-label={label}><code>{code}</code></pre>
 
   <button
-    class="copy-button"
+    class="absolute top-3 right-2 grid size-8 cursor-pointer touch-manipulation place-items-center rounded-lg border-0 bg-white text-slate-500 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 data-copied:bg-blue-50 data-copied:text-blue-600 motion-reduce:transition-none dark:bg-zinc-900 dark:text-slate-400 dark:hover:bg-zinc-800 dark:hover:text-slate-100 dark:data-copied:bg-blue-950 dark:data-copied:text-blue-400"
     type="button"
     data-copy={code}
     aria-label="Copy code"
     title="Copy code"
   >
-    <Icon name="copy" size={17} />
+    <Icon name="copy" class="size-4" />
   </button>
 </div>
 
@@ -27,32 +35,39 @@ const { code, label = "Terminal command" } = Astro.props;
   document
     .querySelectorAll<HTMLButtonElement>("[data-copy]")
     .forEach((button) => {
+      let resetTimeout: number | undefined;
+
       button.addEventListener("click", async () => {
         const code = button.dataset.copy;
 
         if (!code) return;
 
+        const status = document.querySelector<HTMLElement>("#copy-status");
+
         try {
           await navigator.clipboard.writeText(code);
+
+          window.clearTimeout(resetTimeout);
 
           button.dataset.copied = "true";
           button.title = "Copied";
           button.setAttribute("aria-label", "Code copied");
 
-          const status = document.querySelector<HTMLElement>("#copy-status");
+          if (status) {
+            status.textContent = "Code copied.";
+          }
 
-          if (status) status.textContent = "Code copied.";
-
-          window.setTimeout(() => {
+          resetTimeout = window.setTimeout(() => {
             delete button.dataset.copied;
+
             button.title = "Copy code";
             button.setAttribute("aria-label", "Copy code");
 
-            if (status) status.textContent = "";
+            if (status) {
+              status.textContent = "";
+            }
           }, 2000);
         } catch {
-          const status = document.querySelector<HTMLElement>("#copy-status");
-
           if (status) {
             status.textContent =
               "Could not copy. Select the command to copy it.";

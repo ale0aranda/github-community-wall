@@ -4,7 +4,7 @@ import Icon from "../components/Icon.astro";
 import DocsLayout from "../layouts/DocsLayout.astro";
 
 const repository = "https://github.com/ale0aranda/github-community-wall";
-const baseUrl = import.meta.env.BASE_URL;
+const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const firstWall = [
   "npx github-community-wall contributors owner/repository \\",
@@ -39,49 +39,71 @@ const readme = [
 ---
 
 <DocsLayout>
-  <header class="intro">
-    <h1>GitHub Community Wall</h1>
+  <header>
+    <h1 class="mb-3 text-3xl leading-tight font-semibold tracking-tight">
+      GitHub Community Wall
+    </h1>
 
-    <p class="lead">
+    <p class="mb-2 text-base text-slate-500 dark:text-slate-400">
       Generate a visual wall featuring the people who are part of your GitHub
       community.
     </p>
 
-    <p>
+    <p class="text-slate-500 dark:text-slate-400">
       A command-line tool for creating images of followers, contributors,
       sponsors, and organizations. Simple, configurable, and ready to share in
       your README, website, or a banner.
     </p>
 
-    <CodeBlock code="npx github-community-wall --help" />
+    <CodeBlock class="mt-6" code="npx github-community-wall --help" />
 
-    <p class="repository-caption">
+    <p class="mt-6 mb-3 text-slate-500 dark:text-slate-400">
       Open source, built to celebrate your community.
     </p>
 
-    <a class="repository-link" href={repository}>
-      <span class="repository-name">
-        <Icon name="github" size={23} />
-        <span>ale0aranda/github-community-wall</span>
+    <a
+      class="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-xs transition-colors duration-150 hover:border-slate-400 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500 motion-reduce:transition-none dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
+      href={repository}
+    >
+      <span
+        class="flex min-w-0 items-center gap-2 text-xs font-medium sm:gap-3 sm:text-sm"
+      >
+        <Icon name="github" class="size-6 shrink-0" />
+        <span class="wrap-anywhere">ale0aranda/github-community-wall</span>
       </span>
 
-      <Icon name="arrow" size={19} />
+      <Icon
+        name="arrow"
+        class="size-5 shrink-0 text-slate-500 dark:text-slate-400"
+      />
     </a>
   </header>
 
-  <section class="guide" aria-labelledby="getting-started">
-    <h2 id="getting-started" class="section-title">
-      <Icon name="book" size={23} />
+  <section class="mt-10" aria-labelledby="getting-started">
+    <h2
+      id="getting-started"
+      class="mb-4 flex items-center gap-3 text-xl font-semibold tracking-tight"
+    >
+      <Icon
+        name="book"
+        class="size-6 shrink-0 text-blue-500 dark:text-blue-400"
+      />
       Getting started
     </h2>
 
-    <p>
-      You need <strong>Node.js 22.13 or later</strong>. You can run the tool with
-      <code>npx</code> without installing it globally, or install it if you will
-      use it frequently.
+    <p class="text-slate-500 dark:text-slate-400">
+      You need{" "}
+      <strong class="font-medium text-slate-900 dark:text-slate-100">
+        Node.js 22.13 or later
+      </strong>. You can run the tool with{" "}
+      <code
+        class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-900 dark:bg-zinc-800 dark:text-slate-100"
+        >npx</code
+      >{" "}
+      without installing it globally, or install it if you will use it frequently.
     </p>
 
-    <p>
+    <p class="mt-3 text-slate-500 dark:text-slate-400">
       The tool queries GitHub, downloads avatars, and arranges people in an
       image. Choose the community, adjust the design, and decide where to save
       the result.
@@ -89,74 +111,126 @@ const readme = [
 
     <CodeBlock code="npm install -g github-community-wall" />
 
-    <section class="topic" aria-labelledby="authentication">
-      <h3 id="authentication">Connect to GitHub</h3>
+    <section class="mt-8" aria-labelledby="authentication">
+      <h3 id="authentication" class="mb-2 text-lg font-semibold tracking-tight">
+        Connect to GitHub
+      </h3>
 
-      <p>
+      <p class="text-slate-500 dark:text-slate-400">
         Configure a GitHub token in your environment. The
-        <code>GITHUB_TOKEN</code> variable lets you query the API without
-        including credentials directly in commands.
+        <code
+          class="wrap-anywhere rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-900 dark:bg-zinc-800 dark:text-slate-100"
+          >GITHUB_TOKEN</code
+        >
+        variable lets you query the API without including credentials directly in
+        commands.
       </p>
 
       <CodeBlock code="export GITHUB_TOKEN=github_pat_..." />
 
-      <p class="note">
+      <p class="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
         Replace the example value with your token. The required permissions
         depend on the source; sponsors require access to the authenticated
         maintainer's sponsorship data.
       </p>
     </section>
 
-    <section class="topic" aria-labelledby="first-wall">
-      <h3 id="first-wall">Your first wall</h3>
+    <section class="mt-8" aria-labelledby="first-wall">
+      <h3 id="first-wall" class="mb-2 text-lg font-semibold tracking-tight">
+        Your first wall
+      </h3>
 
-      <p>
+      <p class="text-slate-500 dark:text-slate-400">
         To show the people who contribute to a repository, use
-        <code>contributors</code> followed by <code>owner/repository</code>.
-        Choose an output file and limit the number of avatars.
+        <code
+          class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-900 dark:bg-zinc-800 dark:text-slate-100"
+          >contributors</code
+        >
+        followed by
+        <code
+          class="wrap-anywhere rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-900 dark:bg-zinc-800 dark:text-slate-100"
+          >owner/repository</code
+        >. Choose an output file and limit the number of avatars.
       </p>
 
       <CodeBlock code={firstWall} />
 
-      <p>
-        Replace <code>owner/repository</code> with your repository. You will get
-        <code>community-wall.png</code> in the directory where you ran the
-        command: an image ready to publish.
+      <p class="text-slate-500 dark:text-slate-400">
+        Replace
+        <code
+          class="wrap-anywhere rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-900 dark:bg-zinc-800 dark:text-slate-100"
+          >owner/repository</code
+        >
+        with your repository. You will get
+        <code
+          class="wrap-anywhere rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-900 dark:bg-zinc-800 dark:text-slate-100"
+          >community-wall.png</code
+        >
+        in the directory where you ran the command: an image ready to publish.
       </p>
 
-      <p class="note">
-        Contributor walls exclude bots by default. You can adjust the filters
-        to decide who appears.
+      <p
+        class="mt-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400"
+      >
+        Contributor walls exclude bots by default. You can adjust the filters to
+        decide who appears.
       </p>
     </section>
 
-    <section class="topic" aria-labelledby="community">
-      <h3 id="community">Choose your community</h3>
+    <section class="mt-8" aria-labelledby="community">
+      <h3 id="community" class="mb-2 text-lg font-semibold tracking-tight">
+        Choose your community
+      </h3>
 
-      <p>
+      <p class="text-slate-500 dark:text-slate-400">
         Every community has different ways to participate. In addition to
         contributors, you can generate walls for followers, sponsors,
         stargazers, watchers, and organization members.
       </p>
 
-      <p>
-        Use a user for <code>followers</code> and <code>sponsors</code>, a
-        repository for <code>contributors</code>, <code>stargazers</code>, and
-        <code>watchers</code>, or an organization for <code>members</code>.
+      <p class="mt-3 text-slate-500 dark:text-slate-400">
+        Use a user for
+        <code
+          class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-900 dark:bg-zinc-800 dark:text-slate-100"
+          >followers</code
+        >
+        and
+        <code
+          class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-900 dark:bg-zinc-800 dark:text-slate-100"
+          >sponsors</code
+        >, a repository for
+        <code
+          class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-900 dark:bg-zinc-800 dark:text-slate-100"
+          >contributors</code
+        >,
+        <code
+          class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-900 dark:bg-zinc-800 dark:text-slate-100"
+          >stargazers</code
+        >, and
+        <code
+          class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-900 dark:bg-zinc-800 dark:text-slate-100"
+          >watchers</code
+        >, or an organization for
+        <code
+          class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-900 dark:bg-zinc-800 dark:text-slate-100"
+          >members</code
+        >.
       </p>
 
       <CodeBlock code={sources} />
     </section>
 
-    <section class="topic" aria-labelledby="customization">
-      <h3 id="customization">Make it yours</h3>
+    <section class="mt-8" aria-labelledby="customization">
+      <h3 id="customization" class="mb-2 text-lg font-semibold tracking-tight">
+        Make it yours
+      </h3>
 
-      <p>
+      <p class="text-slate-500 dark:text-slate-400">
         Customize the theme, background, avatar shape, and spacing. Add titles,
         subtitles, or a watermark to tailor the result to your project.
       </p>
 
-      <p>
+      <p class="mt-3 text-slate-500 dark:text-slate-400">
         PNG is the default format. You can also export to JPEG, WebP, SVG, HTML,
         or JSON. HTML generates a standalone file; JSON includes avatar and
         design metadata.
@@ -164,66 +238,94 @@ const readme = [
 
       <CodeBlock code={customWall} />
 
-      <p>
+      <p class="text-slate-500 dark:text-slate-400">
         If you use the same options repeatedly, save them in
-        <code>.community-wall.json</code>. Commands read this file from the
-        current directory, and terminal options take precedence.
+        <code
+          class="wrap-anywhere rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-900 dark:bg-zinc-800 dark:text-slate-100"
+          >.community-wall.json</code
+        >. Commands read this file from the current directory, and terminal
+        options take precedence.
       </p>
 
       <CodeBlock code="npx github-community-wall config init" />
     </section>
 
-    <section class="topic" aria-labelledby="publishing">
-      <h3 id="publishing">Share and automate</h3>
+    <section class="mt-8" aria-labelledby="publishing">
+      <h3 id="publishing" class="mb-2 text-lg font-semibold tracking-tight">
+        Share and automate
+      </h3>
 
-      <p>
+      <p class="text-slate-500 dark:text-slate-400">
         Include the wall in your README, share it on your website, or use it in
-        a post. The <code>--twitter-banner</code> option generates a
-        <strong>1500 × 500</strong> follower banner for X.
+        a post. The
+        <code
+          class="wrap-anywhere rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-900 dark:bg-zinc-800 dark:text-slate-100"
+          >--twitter-banner</code
+        >
+        option generates a
+        <strong class="font-medium text-slate-900 dark:text-slate-100">
+          1500 × 500
+        </strong>
+        follower banner for X.
       </p>
 
       <CodeBlock code={banner} />
 
-      <p>
-        The <code>readme</code> command updates the wall block between its
-        markers. If they do not exist, it adds the block to the document.
+      <p class="text-slate-500 dark:text-slate-400">
+        The
+        <code
+          class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-900 dark:bg-zinc-800 dark:text-slate-100"
+          >readme</code
+        >
+        command updates the wall block between its markers. If they do not exist,
+        it adds the block to the document.
       </p>
 
       <CodeBlock code={readme} />
 
-      <p>
+      <p class="text-slate-500 dark:text-slate-400">
         To keep the image up to date, you can run the tool on a schedule with
         GitHub Actions. The repository includes an example workflow that
         generates and saves the walls.
       </p>
 
       <a
-        class="text-link"
+        class="mt-2 -ml-1 inline-flex items-center gap-1 rounded-md px-1 py-1 text-xs text-blue-600 transition-colors hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500 motion-reduce:transition-none dark:text-blue-400 dark:hover:bg-blue-950"
         href={`${repository}/blob/main/.github/workflows/update-community-wall.yml`}
       >
         View automation example
-        <Icon name="arrow" size={15} />
+        <Icon name="arrow" class="size-4" />
       </a>
     </section>
   </section>
 
-  <section class="examples" aria-labelledby="examples">
-    <h2 id="examples" class="section-title">
-      <Icon name="users" size={23} />
+  <section class="mt-10" aria-labelledby="examples">
+    <h2
+      id="examples"
+      class="mb-4 flex items-center gap-3 text-xl font-semibold tracking-tight"
+    >
+      <Icon
+        name="users"
+        class="size-6 shrink-0 text-blue-500 dark:text-blue-400"
+      />
       Your community
     </h2>
 
-    <p>
+    <p class="mb-4 text-slate-500 dark:text-slate-400">
       Two ways to showcase the people who follow your work and help build it.
     </p>
 
-    <div class="example-grid">
-      <figure class="example">
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+      <figure
+        class="overflow-hidden rounded-xl border border-slate-200 bg-white p-3 shadow-xs sm:p-4 dark:border-zinc-800 dark:bg-zinc-900"
+      >
         <a
+          class="grid h-24 place-items-center overflow-hidden rounded-lg bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500 sm:h-28 dark:bg-zinc-800"
           href={`${baseUrl}/images/followers.png`}
           aria-label="View full follower wall"
         >
           <img
+            class="block size-full object-contain"
             src={`${baseUrl}/images/followers.png`}
             alt="Avatar wall generated from GitHub followers"
             loading="lazy"
@@ -233,18 +335,25 @@ const readme = [
           />
         </a>
 
-        <figcaption>
-          <h3>Followers</h3>
-          <p>People who follow your work.</p>
+        <figcaption class="pt-3">
+          <h3 class="mb-1 text-sm font-semibold">Followers</h3>
+
+          <p class="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+            People who follow your work.
+          </p>
         </figcaption>
       </figure>
 
-      <figure class="example">
+      <figure
+        class="overflow-hidden rounded-xl border border-slate-200 bg-white p-3 shadow-xs sm:p-4 dark:border-zinc-800 dark:bg-zinc-900"
+      >
         <a
+          class="grid h-24 place-items-center overflow-hidden rounded-lg bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500 sm:h-28 dark:bg-zinc-800"
           href={`${baseUrl}/images/contributors.png`}
           aria-label="View full contributor wall"
         >
           <img
+            class="block size-full object-contain"
             src={`${baseUrl}/images/contributors.png`}
             alt="Avatar wall generated from repository contributors"
             loading="lazy"
@@ -254,58 +363,83 @@ const readme = [
           />
         </a>
 
-        <figcaption>
-          <h3>Contributors</h3>
-          <p>People who build with you.</p>
+        <figcaption class="pt-3">
+          <h3 class="mb-1 text-sm font-semibold">Contributors</h3>
+
+          <p class="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+            People who build with you.
+          </p>
         </figcaption>
       </figure>
     </div>
   </section>
 
-  <section class="help" aria-labelledby="help">
-    <h2 id="help">Need help?</h2>
+  <section class="mt-8" aria-labelledby="help">
+    <h2 id="help" class="mb-2 text-lg font-semibold tracking-tight">
+      Need help?
+    </h2>
 
-    <p>
-      Run <code>--help</code> to explore the options. Use
-      <code>doctor</code> to check your configuration and token without
-      displaying it.
+    <p class="text-slate-500 dark:text-slate-400">
+      Run
+      <code
+        class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-900 dark:bg-zinc-800 dark:text-slate-100"
+        >--help</code
+      >
+      to explore the options. Use
+      <code
+        class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-900 dark:bg-zinc-800 dark:text-slate-100"
+        >doctor</code
+      >
+      to check your configuration and token without displaying it.
     </p>
 
     <CodeBlock code="npx github-community-wall doctor" />
 
-    <div class="help-links">
-      <a class="text-link" href={`${repository}#cli-reference`}>
+    <div class="mt-3 flex flex-wrap gap-x-6 gap-y-2">
+      <a
+        class="-ml-1 inline-flex items-center gap-1 rounded-md px-1 py-1 text-xs text-blue-600 transition-colors hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500 motion-reduce:transition-none dark:text-blue-400 dark:hover:bg-blue-950"
+        href={`${repository}#cli-reference`}
+      >
         Command reference
-        <Icon name="arrow" size={15} />
+        <Icon name="arrow" class="size-4" />
       </a>
 
-      <a class="text-link" href={`${repository}/issues`}>
+      <a
+        class="-ml-1 inline-flex items-center gap-1 rounded-md px-1 py-1 text-xs text-blue-600 transition-colors hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500 motion-reduce:transition-none dark:text-blue-400 dark:hover:bg-blue-950"
+        href={`${repository}/issues`}
+      >
         Report an issue
-        <Icon name="arrow" size={15} />
+        <Icon name="arrow" class="size-4" />
       </a>
     </div>
   </section>
 
-  <footer class="footer">
-    <p>Open source · MIT</p>
+  <footer class="mt-10 flex flex-col items-center gap-3">
+    <p class="text-xs text-slate-500 dark:text-slate-400">Open source · MIT</p>
 
-    <div class="theme-switch" role="group" aria-label="Page theme">
+    <div
+      class="flex gap-1 rounded-full border border-slate-200 bg-white p-1 dark:border-zinc-800 dark:bg-zinc-900"
+      role="group"
+      aria-label="Page theme"
+    >
       <button
+        class="grid h-7 w-8 cursor-pointer touch-manipulation place-items-center rounded-full border-0 bg-transparent text-slate-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 aria-pressed:bg-blue-50 aria-pressed:text-blue-600 dark:text-slate-400 dark:aria-pressed:bg-blue-950 dark:aria-pressed:text-blue-400"
         type="button"
         data-set-theme="light"
         aria-label="Use light theme"
         aria-pressed="true"
       >
-        <Icon name="sun" size={17} />
+        <Icon name="sun" class="size-4" />
       </button>
 
       <button
+        class="grid h-7 w-8 cursor-pointer touch-manipulation place-items-center rounded-full border-0 bg-transparent text-slate-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 aria-pressed:bg-blue-50 aria-pressed:text-blue-600 dark:text-slate-400 dark:aria-pressed:bg-blue-950 dark:aria-pressed:text-blue-400"
         type="button"
         data-set-theme="dark"
         aria-label="Use dark theme"
         aria-pressed="false"
       >
-        <Icon name="moon" size={17} />
+        <Icon name="moon" class="size-4" />
       </button>
     </div>
   </footer>

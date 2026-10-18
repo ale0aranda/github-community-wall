@@ -13,13 +13,12 @@ const {
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" class="scroll-smooth scroll-pt-8 motion-reduce:scroll-auto">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
-    <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#f8f9fb" />
+    <meta name="theme-color" content="#f8fafc" />
 
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
@@ -28,20 +27,35 @@ const {
     <title>{title}</title>
 
     <script is:inline>
+      let theme = "light";
+
       try {
-        const savedTheme = localStorage.getItem("community-wall-theme");
-        document.documentElement.dataset.theme =
-          savedTheme === "dark" ? "dark" : "light";
+        theme =
+          localStorage.getItem("community-wall-theme") === "dark"
+            ? "dark"
+            : "light";
       } catch {
-        document.documentElement.dataset.theme = "light";
+        // Use the default theme when storage is unavailable.
       }
+
+      document.documentElement.dataset.theme = theme;
     </script>
   </head>
 
-  <body>
-    <a class="skip-link" href="#content">Skip to content</a>
+  <body
+    class="m-0 bg-slate-50 font-sans text-sm leading-relaxed text-slate-900 antialiased selection:bg-blue-100 selection:text-slate-900 dark:bg-zinc-950 dark:text-slate-100 dark:selection:bg-blue-950 dark:selection:text-slate-100"
+  >
+    <a
+      class="fixed top-3 left-3 z-10 -translate-y-24 rounded-lg bg-white px-3 py-2 focus:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500 dark:bg-zinc-900"
+      href="#content"
+    >
+      Skip to content
+    </a>
 
-    <main id="content" class="document">
+    <main
+      id="content"
+      class="mx-auto max-w-2xl px-5 pt-10 pb-8 sm:px-6 sm:pt-20"
+    >
       <slot />
     </main>
 

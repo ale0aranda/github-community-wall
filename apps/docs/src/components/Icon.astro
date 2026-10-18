@@ -1,10 +1,10 @@
 ---
 interface Props {
   name: "github" | "copy" | "arrow" | "book" | "users" | "sun" | "moon";
-  size?: number;
+  class?: string;
 }
 
-const { name, size = 20 } = Astro.props;
+const { name, class: className = "size-5" } = Astro.props;
 
 const paths: Record<Props["name"], string> = {
   github:
@@ -20,8 +20,7 @@ const paths: Record<Props["name"], string> = {
 ---
 
 <svg
-  width={size}
-  height={size}
+  class={className}
   viewBox="0 0 24 24"
   fill="none"
   stroke="currentColor"
@@ -29,6 +28,7 @@ const paths: Record<Props["name"], string> = {
   stroke-linecap="round"
   stroke-linejoin="round"
   aria-hidden="true"
+  focusable="false"
 >
   <path d={paths[name]}></path>
 </svg>
