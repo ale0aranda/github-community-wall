@@ -2,39 +2,22 @@ import { type Canvas, createCanvas, type SKRSContext2D } from '@napi-rs/canvas';
 
 import { fetchImages } from '../fetchers/images-fetcher.js';
 
-export type UserFilterType = 'all' | 'user' | 'organization' | 'bot';
+export type {
+  AvatarGridOptions,
+  TwitterBannerOptions
+} from '../types/render.js';
+export type { UserFilterType } from '../types/user.js';
 
-export interface AvatarGridOptions {
-  columns: number;
-  imageSize: number;
-  background?: string | undefined;
-  gap?: number | undefined;
-  shape?: 'square' | 'circle' | undefined;
-  title?: string | undefined;
-  subtitle?: string | undefined;
-  format?: 'png' | 'jpeg' | 'webp' | 'svg' | 'html' | 'json' | undefined;
-  excludeBots?: boolean | undefined;
-  sort?: 'login' | 'contributions' | 'none' | undefined;
-  theme?: 'github-dark' | 'github-light' | 'neon' | 'minimal' | undefined;
-  watermark?: string | undefined;
-  filterType?: UserFilterType | undefined;
-  includeLoginPattern?: string | undefined;
-  excludeLoginPattern?: string | undefined;
-  minContributions?: number | undefined;
-  maxContributions?: number | undefined;
-  minFollowers?: number | undefined;
-  maxFollowers?: number | undefined;
-}
+import { getTheme } from './themes.js';
 
-export interface TwitterBannerOptions {
-  imageSize: number;
-  background?: string | undefined;
-  gap?: number | undefined;
-  shape?: 'square' | 'circle' | undefined;
-  format?: 'png' | 'jpeg' | 'webp' | 'svg' | undefined;
-  theme?: AvatarGridOptions['theme'];
-  watermark?: string | undefined;
-}
+import type {
+  AvatarGridOptions,
+  TwitterBannerOptions
+} from '../types/render.js';
+
+export { getTheme, registerTheme } from './themes.js';
+
+export type { Theme } from './themes.js';
 
 export const validateAvatarGridOptions = (options: AvatarGridOptions): void => {
   if (options.imageSize <= 0) {
@@ -62,17 +45,6 @@ const escapeXml = (value: string): string =>
         '"': '&quot;'
       })[character] ?? character
   );
-
-const getTheme = (
-  theme: AvatarGridOptions['theme']
-): { background: string; foreground: string } =>
-  ({
-    'github-light': { background: '#f6f8fa', foreground: '#24292f' },
-    neon: { background: '#090014', foreground: '#f0abfc' },
-    minimal: { background: '#ffffff', foreground: '#111827' },
-    'github-dark': { background: '#0d1117', foreground: '#f0f6fc' },
-    undefined: { background: 'transparent', foreground: '#ffffff' }
-  })[theme ?? 'undefined'];
 
 const renderSvg = (
   avatarUrls: string[],
