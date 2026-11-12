@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 
-import type { AvatarGridOptions } from './renderer/avatar-grid-renderer.js';
+import type { AvatarGridOptions } from '../types/render.js';
 
 type Optional<T> = {
   [Key in keyof T]?: T[Key] | undefined;

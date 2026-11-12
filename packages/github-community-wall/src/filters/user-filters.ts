@@ -1,21 +1,14 @@
-export type UserFilterType = 'all' | 'user' | 'organization' | 'bot';
+import type {
+  UserFilterConfig,
+  UserFilterType,
+  UserLike
+} from '../types/user.js';
 
-export interface UserFilterConfig {
-  filterType?: UserFilterType | undefined;
-  includeLoginPattern?: string | undefined;
-  excludeLoginPattern?: string | undefined;
-  minContributions?: number | undefined;
-  maxContributions?: number | undefined;
-  minFollowers?: number | undefined;
-  maxFollowers?: number | undefined;
-}
-
-export interface UserLike {
-  login?: string | null;
-  type?: string | null;
-  contributions?: number | null;
-  followers?: number | null;
-}
+export type {
+  UserFilterConfig,
+  UserFilterType,
+  UserLike
+} from '../types/user.js';
 
 const matchesType = (user: UserLike, filterType: UserFilterType): boolean => {
   const login = user.login ?? '';

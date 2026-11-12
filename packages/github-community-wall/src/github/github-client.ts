@@ -1,7 +1,10 @@
-import { cachedFetch } from './cache.js';
-import { assertGitHubResponse, GitHubApiError } from './errors.js';
+import { cachedFetch } from '../cache.js';
+import {
+  assertGitHubResponse,
+  GitHubApiError
+} from '../errors/github-errors.js';
 
-import type { GitHubHeaders } from './fetchers/graph-fetcher.js';
+import type { GitHubHeaders } from '../types/github-api.js';
 
 interface GitHubUser {
   login: string;
