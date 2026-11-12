@@ -1,5 +1,5 @@
 export { cachedFetch, configureCache } from './cache.js';
-export { loadConfig, mergeConfig } from './config.js';
+export { loadConfig, mergeConfig } from './config/config.js';
 export {
   COLUMNS,
   FOLLOWERS_LIMIT,
@@ -7,7 +7,14 @@ export {
   OUTPUT_FILE,
   TWITTER_BANNER_LIMIT,
   VERSION
-} from './const.js';
+} from './constants/const.js';
+export {
+  generateContributorsWall,
+  generateFollowersWall,
+  generateOrganizationMembersWall,
+  generateRepositoryUsersWall,
+  generateSponsorsWall
+} from './core/wall-generator.js';
 export {
   assertGitHubResponse,
   GitHubApiError,
@@ -15,50 +22,40 @@ export {
   GitHubGraphQLError,
   GitHubNotFoundError,
   GitHubRateLimitError
-} from './errors.js';
+} from './errors/github-errors.js';
 export {
   fetchContributors,
-  generateContributorsWall,
   parseRepository
 } from './fetchers/contributors-fetcher.js';
 export {
   fetchFollowersPfps,
-  fetchGraphQL,
-  generateGraph
-} from './fetchers/graph-fetcher.js';
+  fetchGraphQL
+} from './fetchers/followers-fetcher.js';
 export { fetchImages } from './fetchers/images-fetcher.js';
 export {
   fetchOrganizationMembers,
   fetchStargazers,
-  fetchWatchers,
-  generateOrganizationMembersWall,
-  generateRepositoryUsersWall
+  fetchWatchers
 } from './fetchers/repository-users-fetcher.js';
 export {
   fetchSponsors,
-  fetchSponsorsGraphQL,
-  generateSponsorsWall
+  fetchSponsorsGraphQL
 } from './fetchers/sponsors-fetcher.js';
 export {
   createGitHubHeaders,
   fetchAuthenticatedUsername
-} from './github-client.js';
+} from './github/github-client.js';
 export {
   renderAvatarGrid,
   renderTwitterBanner
 } from './renderer/avatar-grid-renderer.js';
 
-export type { WallConfig } from './config.js';
-export type { GitHubHeaders } from './fetchers/graph-fetcher.js';
+export type { WallConfig } from './config/config.js';
 export type {
   FetchImagesOptions,
   ImageFetchWarning
 } from './fetchers/images-fetcher.js';
-export type {
-  AvatarGridOptions,
-  TwitterBannerOptions,
-  UserFilterType
-} from './renderer/avatar-grid-renderer.js';
+export type { GitHubHeaders } from './types/github-api.js';
 export type {
   FollowersData,
   FollowersPageInfo,
@@ -66,3 +63,8 @@ export type {
   GitHubFollower,
   GitHubGraphQLResponse
 } from './types/globals.js';
+export type {
+  AvatarGridOptions,
+  TwitterBannerOptions
+} from './types/render.js';
+export type { UserFilterType } from './types/user.js';

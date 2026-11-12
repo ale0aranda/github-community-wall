@@ -1,25 +1,18 @@
 import { cachedFetch } from '../cache.js';
-import { TWITTER_BANNER_LIMIT } from '../const.js';
 import {
   assertGitHubResponse,
   GitHubApiError,
   GitHubGraphQLError
-} from '../errors.js';
-import {
-  renderAvatarGrid,
-  renderTwitterBanner,
-  validateAvatarGridOptions
-} from '../renderer/avatar-grid-renderer.js';
-import { applyUserFilter } from '../user-filters.js';
+} from '../errors/github-errors.js';
 
-import type { AvatarGridOptions } from '../renderer/avatar-grid-renderer.js';
 import type {
   FollowersData,
-  GitHubFollower,
-  GitHubGraphQLResponse
-} from '../types/globals.js';
+  GitHubGraphQLResponse,
+  GitHubHeaders
+} from '../types/github-api.js';
+import type { GitHubFollower } from '../types/user.js';
 
-export type GitHubHeaders = Record<string, string>;
+export type { GitHubHeaders } from '../types/github-api.js';
 
 export const fetchGraphQL = async (
   username: string,
@@ -140,58 +133,4 @@ export const fetchFollowers = async (
   }
 
   return followers.slice(0, limit);
-};
-
-export const generateGraph = async (
-  username: string,
-  imageSize: number,
-  columns: number,
-  headers: GitHubHeaders,
-  limit = 100,
-  twitterBanner = false,
-  options?: Partial<AvatarGridOptions>
-): Promise<Buffer> => {
-  const renderOptions = {
-    columns,
-    imageSize,
-    ...options
-  };
-
-  validateAvatarGridOptions(renderOptions);
-
-  const filteredFollowers = applyUserFilter(
-    await fetchFollowers(
-      username,
-      headers,
-      twitterBanner ? Math.min(limit, TWITTER_BANNER_LIMIT) : limit
-    ),
-    {
-      filterType: options?.filterType,
-      includeLoginPattern: options?.includeLoginPattern,
-      excludeLoginPattern: options?.excludeLoginPattern,
-      minContributions: options?.minContributions,
-      maxContributions: options?.maxContributions,
-      minFollowers: options?.minFollowers,
-      maxFollowers: options?.maxFollowers
-    }
-  );
-
-  const avatarUrls = filteredFollowers.map((follower) => follower.avatarUrl);
-
-  if (twitterBanner) {
-    return renderTwitterBanner(avatarUrls, {
-      imageSize,
-      background: options?.background,
-      gap: options?.gap,
-      shape: options?.shape,
-      format:
-        options?.format === 'html' || options?.format === 'json'
-          ? 'png'
-          : options?.format,
-      theme: options?.theme,
-      watermark: options?.watermark
-    });
-  }
-
-  return renderAvatarGrid(avatarUrls, renderOptions);
 };

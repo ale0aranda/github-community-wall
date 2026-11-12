@@ -3,20 +3,14 @@ import {
   assertGitHubResponse,
   GitHubApiError,
   GitHubGraphQLError
-} from '../errors.js';
-import {
-  renderAvatarGrid,
-  validateAvatarGridOptions
-} from '../renderer/avatar-grid-renderer.js';
-import { applyUserFilter } from '../user-filters.js';
+} from '../errors/github-errors.js';
 
-import type { AvatarGridOptions } from '../renderer/avatar-grid-renderer.js';
 import type {
-  GitHubSponsor,
+  GitHubHeaders,
   GitHubSponsorsGraphQLResponse,
   SponsorsData
-} from '../types/globals.js';
-import type { GitHubHeaders } from './graph-fetcher.js';
+} from '../types/github-api.js';
+import type { GitHubSponsor } from '../types/user.js';
 
 export const fetchSponsorsGraphQL = async (
   username: string,
@@ -105,7 +99,13 @@ export const fetchSponsors = async (
 
     for (const node of nodes) {
       if (node.sponsorEntity) {
-        sponsors.push(node.sponsorEntity);
+        sponsors.push({
+          avatarUrl: node.sponsorEntity.avatarUrl,
+          login: node.sponsorEntity.login,
+          type: (node.sponsorEntity.__typename ?? 'User') as
+            | 'Organization'
+            | 'User'
+        });
       }
 
       if (sponsors.length >= limit) {
@@ -125,35 +125,4 @@ export const fetchSponsors = async (
   }
 
   return sponsors.slice(0, limit);
-};
-
-export const generateSponsorsWall = async (
-  username: string,
-  imageSize: number,
-  columns: number,
-  headers: GitHubHeaders,
-  limit = 100,
-  options?: Partial<AvatarGridOptions>
-): Promise<Buffer> => {
-  const renderOptions = {
-    columns,
-    imageSize,
-    ...options
-  };
-
-  validateAvatarGridOptions(renderOptions);
-
-  const sponsors = applyUserFilter(
-    await fetchSponsors(username, headers, limit),
-    {
-      filterType: options?.filterType,
-      includeLoginPattern: options?.includeLoginPattern,
-      excludeLoginPattern: options?.excludeLoginPattern
-    }
-  );
-
-  return renderAvatarGrid(
-    sponsors.map((sponsor) => sponsor.avatarUrl),
-    renderOptions
-  );
 };

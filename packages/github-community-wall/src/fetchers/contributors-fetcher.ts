@@ -1,14 +1,8 @@
 import { cachedFetch } from '../cache.js';
-import { assertGitHubResponse } from '../errors.js';
-import {
-  renderAvatarGrid,
-  validateAvatarGridOptions
-} from '../renderer/avatar-grid-renderer.js';
-import { applyUserFilter } from '../user-filters.js';
+import { assertGitHubResponse } from '../errors/github-errors.js';
 
-import type { AvatarGridOptions } from '../renderer/avatar-grid-renderer.js';
-import type { GitHubContributor } from '../types/globals.js';
-import type { GitHubHeaders } from './graph-fetcher.js';
+import type { GitHubHeaders } from '../types/github-api.js';
+import type { GitHubContributor } from '../types/user.js';
 
 interface GitHubContributorResponse {
   avatar_url: string | null;
@@ -101,53 +95,4 @@ export const fetchContributors = async (
   }
 
   return contributors;
-};
-
-export const generateContributorsWall = async (
-  repository: string,
-  imageSize: number,
-  columns: number,
-  headers: GitHubHeaders,
-  limit = 100,
-  includeBots = false,
-  options?: Partial<AvatarGridOptions>
-): Promise<Buffer> => {
-  const renderOptions = {
-    columns,
-    imageSize,
-    ...options
-  };
-
-  validateAvatarGridOptions(renderOptions);
-
-  let contributors = await fetchContributors(
-    repository,
-    headers,
-    limit,
-    options?.excludeBots === undefined ? includeBots : !options.excludeBots
-  );
-  if (options?.sort === 'login') {
-    contributors = [...contributors].sort((a, b) =>
-      a.login.localeCompare(b.login)
-    );
-  } else if (options?.sort === 'contributions') {
-    contributors = [...contributors].sort(
-      (a, b) => b.contributions - a.contributions
-    );
-  }
-
-  contributors = applyUserFilter(contributors, {
-    filterType: options?.filterType,
-    includeLoginPattern: options?.includeLoginPattern,
-    excludeLoginPattern: options?.excludeLoginPattern,
-    minContributions: options?.minContributions,
-    maxContributions: options?.maxContributions,
-    minFollowers: options?.minFollowers,
-    maxFollowers: options?.maxFollowers
-  });
-
-  return renderAvatarGrid(
-    contributors.map((contributor) => contributor.avatarUrl),
-    renderOptions
-  );
 };

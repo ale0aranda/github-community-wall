@@ -1,12 +1,7 @@
 import { cachedFetch } from '../cache.js';
-import { assertGitHubResponse } from '../errors.js';
-import {
-  renderAvatarGrid,
-  validateAvatarGridOptions
-} from '../renderer/avatar-grid-renderer.js';
-import { applyUserFilter } from '../user-filters.js';
+import { assertGitHubResponse } from '../errors/github-errors.js';
 
-import type { GitHubHeaders } from './graph-fetcher.js';
+import type { GitHubHeaders } from '../types/github-api.js';
 
 interface RepositoryUser {
   avatar_url?: string;
@@ -150,67 +145,4 @@ export const fetchWatchers = async (
   );
 
   return watchers.map((user) => user.avatar_url ?? '');
-};
-
-export const generateRepositoryUsersWall = async (
-  repository: string,
-  source: 'stargazers' | 'watchers',
-  imageSize: number,
-  columns: number,
-  headers: GitHubHeaders,
-  limit = 100,
-  options: Parameters<typeof renderAvatarGrid>[1] = { imageSize, columns }
-): Promise<Buffer> => {
-  validateAvatarGridOptions(options);
-
-  const users = await fetchRepositoryUsers(
-    repository,
-    source === 'stargazers' ? 'stargazers' : 'subscribers',
-    headers,
-    limit
-  );
-
-  const filteredUsers = applyUserFilter(users, {
-    filterType: options.filterType,
-    includeLoginPattern: options.includeLoginPattern,
-    excludeLoginPattern: options.excludeLoginPattern,
-    minContributions: options.minContributions,
-    maxContributions: options.maxContributions,
-    minFollowers: options.minFollowers,
-    maxFollowers: options.maxFollowers
-  });
-
-  return renderAvatarGrid(
-    filteredUsers.map((user) => user.avatar_url ?? ''),
-    options
-  );
-};
-
-export const generateOrganizationMembersWall = async (
-  organization: string,
-  imageSize: number,
-  columns: number,
-  headers: GitHubHeaders,
-  limit = 100,
-  options: Parameters<typeof renderAvatarGrid>[1] = { imageSize, columns }
-): Promise<Buffer> => {
-  validateAvatarGridOptions(options);
-  const members = await fetchOrganizationMembersData(
-    organization,
-    headers,
-    limit
-  );
-  const filteredMembers = applyUserFilter(members, {
-    filterType: options.filterType,
-    includeLoginPattern: options.includeLoginPattern,
-    excludeLoginPattern: options.excludeLoginPattern,
-    minContributions: options.minContributions,
-    maxContributions: options.maxContributions,
-    minFollowers: options.minFollowers,
-    maxFollowers: options.maxFollowers
-  });
-  return renderAvatarGrid(
-    filteredMembers.map((member) => member.avatar_url ?? ''),
-    options
-  );
 };
