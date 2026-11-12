@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { generateSponsorsWall } from '../src/core/wall-generator.js';
 import {
   fetchSponsors,
-  fetchSponsorsGraphQL,
-  generateSponsorsWall
+  fetchSponsorsGraphQL
 } from '../src/fetchers/sponsors-fetcher.js';
 import { renderAvatarGrid } from '../src/renderer/avatar-grid-renderer.js';
 
@@ -38,7 +38,11 @@ const createSponsorsResponse = (
             hasNextPage
           },
           nodes: sponsors.map((sponsor) => ({
-            sponsorEntity: sponsor
+            sponsorEntity: {
+              avatarUrl: sponsor.avatarUrl,
+              login: sponsor.login,
+              __typename: sponsor.type
+            }
           }))
         }
       }

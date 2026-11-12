@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { applyUserFilter } from '../src/user-filters.js';
+import { applyUserFilter } from '../src/filters/user-filters.js';
 
 describe('user filters', () => {
   it('filters by type and login regex', () => {

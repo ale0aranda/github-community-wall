@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createGitHubHeaders,
   fetchAuthenticatedUsername
-} from '../src/github-client.js';
+} from '../src/github/github-client.js';
 
 describe('createGitHubHeaders', () => {
   it('creates authenticated GitHub headers', () => {

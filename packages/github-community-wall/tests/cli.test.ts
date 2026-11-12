@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { type CliDependencies, createCli } from '../src/cli.js';
+import { type CliDependencies, createCli } from '../src/cli/cli.js';
 
 const createDependencies = (): CliDependencies => ({
   createHeaders: vi.fn().mockReturnValue({

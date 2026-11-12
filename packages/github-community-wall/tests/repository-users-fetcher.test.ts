@@ -1,11 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  fetchOrganizationMembers,
-  fetchStargazers,
-  fetchWatchers,
   generateOrganizationMembersWall,
   generateRepositoryUsersWall
+} from '../src/core/wall-generator.js';
+import {
+  fetchOrganizationMembers,
+  fetchStargazers,
+  fetchWatchers
 } from '../src/fetchers/repository-users-fetcher.js';
 import {
   renderAvatarGrid,

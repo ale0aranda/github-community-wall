@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { generateContributorsWall } from '../src/core/wall-generator.js';
 import {
   fetchContributors,
-  generateContributorsWall,
   parseRepository
 } from '../src/fetchers/contributors-fetcher.js';
 import { renderAvatarGrid } from '../src/renderer/avatar-grid-renderer.js';

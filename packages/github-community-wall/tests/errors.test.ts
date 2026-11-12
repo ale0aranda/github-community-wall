@@ -6,7 +6,7 @@ import {
   GitHubAuthenticationError,
   GitHubNotFoundError,
   GitHubRateLimitError
-} from '../src/errors.js';
+} from '../src/errors/github-errors.js';
 
 const createResponse = (
   status: number,

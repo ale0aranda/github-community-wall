@@ -1,11 +1,11 @@
 import { createCanvas } from '@napi-rs/canvas';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { generateFollowersWall as generateGraph } from '../src/core/wall-generator.js';
 import {
   fetchFollowersPfps,
-  fetchGraphQL,
-  generateGraph
-} from '../src/fetchers/graph-fetcher.js';
+  fetchGraphQL
+} from '../src/fetchers/followers-fetcher.js';
 import { fetchImages } from '../src/fetchers/images-fetcher.js';
 
 const canvasMocks = vi.hoisted(() => ({
